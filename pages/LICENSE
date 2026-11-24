@@ -1,0 +1,32 @@
+MIT License
+
+Copyright (c) 2026 王成浩
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+关于非代码素材（示例数据集、文档、演示视频、界面截图）：
+
+- 四个内置数据集是本项目依据公开讨论**重构**编写的示例，不是知乎原文，
+  也不包含任何用户个人信息；可在署名本项目的条件下自由使用。
+- 演示视频的旁白由 Windows SAPI 中文语音合成生成，不含真人录音。
+- 界面与卡片图使用 Noto Sans SC / Noto Serif SC（SIL Open Font License 1.1），
+  字体文件未随本仓库分发。
+- 未使用知乎官方 IP「刘看山」的任何素材。
