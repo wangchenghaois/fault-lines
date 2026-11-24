@@ -1,0 +1,3196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>歧见 · Fault Lines — 观点断层图</title>
+<meta name="description" content="不告诉你答案，告诉你答案为什么分成两半。" />
+<style>
+/* 歧见 · Fault Lines
+   视觉语言：地质剖面。深色岩层、琥珀色矿脉、断裂处的高亮。
+   排版：标题用宋体（编辑感），正文用系统黑体，数字用等宽。 */
+
+:root {
+  --bg: #0a0d11;
+  --bg-2: #0f141a;
+  --band: #131a22;
+  --line: #1f2a36;
+  --line-2: #2a3846;
+  --text: #e3ebf3;
+  --text-2: #93a4b5;
+  --text-3: #5f7285;
+
+  --fact: #4da3ff;
+  --value: #ffa94d;
+  --pred: #b485ff;
+  --consensus: #35d6a4;
+
+  --serif: "Songti SC", "SimSun", "Source Han Serif SC", "Noto Serif SC", serif;
+  --sans: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-image:
+    radial-gradient(1200px 500px at 50% -10%, rgba(77,163,255,.07), transparent 60%),
+    radial-gradient(900px 400px at 90% 20%, rgba(255,169,77,.05), transparent 60%);
+  background-attachment: fixed;
+  padding-bottom: 40px;
+}
+
+/* ---------- 顶栏 ---------- */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 30;
+  background: rgba(10,13,17,.85);
+  backdrop-filter: blur(14px);
+}
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand-cn {
+  font-family: var(--serif);
+  font-size: 22px; letter-spacing: .12em; font-weight: 700;
+  background: linear-gradient(100deg, #e3ebf3, #9fb6cc);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.brand-en { font-family: var(--mono); font-size: 10px; letter-spacing: .34em; color: var(--text-3); }
+.brand-tag {
+  margin-left: 14px; padding-left: 16px;
+  border-left: 1px solid var(--line);
+  font-family: var(--serif); font-size: 12.5px;
+  color: var(--text-3); letter-spacing: .02em;
+}
+@media (max-width: 1080px) { .brand-tag { display: none; } }
+.topbar-right { display: flex; gap: 8px; align-items: center; }
+
+/* ---------- 按钮 ---------- */
+.btn {
+  font-family: var(--sans); font-size: 13px;
+  padding: 7px 14px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line-2); background: transparent; color: var(--text-2);
+  transition: all .18s ease;
+}
+.btn:hover { color: var(--text); border-color: #3b4d5f; background: rgba(255,255,255,.03); }
+.btn.primary {
+  background: linear-gradient(180deg, #2b7ac4, #1f5f9e);
+  border-color: #3d8dd8; color: #fff; font-weight: 500;
+}
+.btn.primary:hover { background: linear-gradient(180deg, #3489d6, #2470b6); }
+.btn.small { padding: 4px 10px; font-size: 12px; }
+.btn.ghost { background: rgba(255,255,255,.02); }
+.btn.stance { border-color: var(--line-2); }
+.btn.stance.active { background: rgba(53,214,164,.14); border-color: var(--consensus); color: var(--consensus); }
+
+.ghost-select {
+  background: rgba(255,255,255,.03); color: var(--text-2);
+  border: 1px solid var(--line-2); border-radius: 6px;
+  padding: 7px 10px; font-size: 13px; font-family: var(--sans);
+  max-width: 230px; cursor: pointer;
+}
+.dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--text-3); margin-right: 6px; vertical-align: middle; }
+.dot.ok { background: var(--consensus); box-shadow: 0 0 8px rgba(53,214,164,.7); }
+.dot.bad { background: #e5534b; }
+
+/* ---------- 问题条 ---------- */
+.qbar { padding: 30px 32px 6px; max-width: 1240px; margin: 0 auto; }
+.question {
+  font-family: var(--serif);
+  font-size: 30px; font-weight: 600; line-height: 1.4; letter-spacing: .01em;
+  color: #f0f5fa;
+}
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.chip {
+  font-size: 12px; font-family: var(--mono);
+  padding: 4px 10px; border-radius: 4px;
+  background: rgba(255,255,255,.03); border: 1px solid var(--line);
+  color: var(--text-2);
+}
+.chip.fact { color: var(--fact); border-color: rgba(77,163,255,.3); background: rgba(77,163,255,.07); }
+.chip.value { color: var(--value); border-color: rgba(255,169,77,.3); background: rgba(255,169,77,.07); }
+.chip.pred { color: var(--pred); border-color: rgba(180,133,255,.3); background: rgba(180,133,255,.07); }
+.chip.consensus { color: var(--consensus); border-color: rgba(53,214,164,.3); background: rgba(53,214,164,.07); }
+.source { margin-top: 10px; font-size: 11px; color: var(--text-3); font-family: var(--mono); }
+
+/* 轻提示：替代 alert —— alert 会阻塞渲染线程，把画面挡在遮罩后面 */
+.notice {
+  margin: 14px auto 0; max-width: 1240px; padding: 9px 14px;
+  font-size: 12.5px; line-height: 1.6; border-radius: 6px;
+  border-left: 2px solid var(--fact); background: rgba(77, 163, 255, .08);
+  color: var(--text-2); font-family: var(--sans);
+}
+.notice.ok { border-left-color: var(--consensus); background: rgba(53, 214, 164, .08); }
+.notice.warn { border-left-color: var(--value); background: rgba(255, 169, 77, .09); }
+.notice.err { border-left-color: #ff6b6b; background: rgba(255, 107, 107, .1); }
+.notice.hidden { display: none; }
+
+/* ---------- 总图 ---------- */
+.overview-wrap { max-width: 1240px; margin: 22px auto 0; padding: 0 32px; }
+.section-label {
+  font-size: 10px; letter-spacing: .22em; color: var(--text-3);
+  font-family: var(--mono); text-transform: uppercase; margin-bottom: 6px;
+}
+.overview { width: 100%; height: 190px; display: block; }
+.ov-issue { cursor: pointer; }
+.ov-issue:hover .ov-hit { fill: rgba(255,255,255,.06); }
+.ov-label { font-size: 10px; fill: var(--text-3); font-family: var(--mono); }
+.ov-empty { font-size: 15px; fill: var(--text-2); font-family: var(--serif); letter-spacing: .04em; }
+.ov-empty-sub { font-size: 11px; fill: var(--text-3); font-family: var(--sans); }
+
+/* ---------- 剖面 ---------- */
+.split-wrap { max-width: 1240px; margin: 8px auto 0; padding: 0 32px 8px; }
+.split-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.fault-tag {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .1em;
+  padding: 3px 9px; border-radius: 3px; border: 1px solid currentColor;
+}
+.fault-tag.fact { color: var(--fact); }
+.fault-tag.value { color: var(--value); }
+.fault-tag.pred { color: var(--pred); }
+.split-title { font-family: var(--sans); font-size: 19px; font-weight: 500; color: #eaf1f8; }
+
+.split-grid {
+  display: grid; grid-template-columns: 1fr 120px 1fr; gap: 0;
+  align-items: stretch; min-height: 300px;
+}
+
+.side { display: flex; flex-direction: column; }
+.side-a { align-items: flex-end; padding-right: 18px; }
+.side-b { align-items: flex-start; padding-left: 18px; }
+.side-label {
+  font-size: 11px; font-family: var(--mono); letter-spacing: .14em;
+  color: var(--text-3); margin-bottom: 12px; text-transform: uppercase;
+}
+.cards { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.side-a .cards { align-items: flex-end; }
+
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.015));
+  border: 1px solid var(--line);
+  border-radius: 8px; padding: 12px 14px; width: 100%;
+  transition: all .2s ease; position: relative;
+}
+.card:hover { border-color: var(--line-2); transform: translateY(-1px); }
+.card.isolated-card { border-color: rgba(180,133,255,.35); }
+.card-meta { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; font-size: 10px; font-family: var(--mono); color: var(--text-3); }
+.card-type { padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; font-size: 9px; letter-spacing: .06em; }
+.card-type.fact { color: var(--fact); }
+.card-type.value { color: var(--value); }
+.card-type.prediction { color: var(--pred); }
+.card-type.causal, .card-type.definition { color: #7f93a6; }
+.card-text { font-size: 13.5px; line-height: 1.68; color: #d8e2ec; }
+.card-evidence { margin-top: 7px; font-size: 11px; color: var(--text-3); }
+.card-premises { margin-top: 8px; display: flex; gap: 5px; flex-wrap: wrap; }
+.ptag {
+  font-size: 10px; font-family: var(--mono); padding: 1px 6px;
+  border-radius: 3px; background: rgba(255,255,255,.04);
+  border: 1px solid var(--line); color: var(--text-2);
+}
+.ptag.hit { background: rgba(53,214,164,.12); border-color: rgba(53,214,164,.45); color: var(--consensus); }
+.ptag.clash { background: rgba(229,83,75,.12); border-color: rgba(229,83,75,.45); color: #ff8078; }
+
+/* 裂缝 */
+.crack-col { position: relative; display: flex; flex-direction: column; align-items: center; }
+#crack { width: 100%; height: 100%; min-height: 300px; display: block; }
+.crack-note {
+  position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+  font-family: var(--mono); font-size: 9px; letter-spacing: .16em;
+  color: var(--text-3); white-space: nowrap;
+}
+
+/* 结论条 */
+.verdict {
+  margin-top: 22px; border-top: 1px solid var(--line); padding-top: 18px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.verdict-row { display: grid; grid-template-columns: 90px 1fr; gap: 14px; align-items: start; }
+.verdict-key {
+  font-size: 11px; font-family: var(--mono); color: var(--text-3);
+  letter-spacing: .14em; padding-top: 3px;
+}
+.verdict-val { font-size: 14px; color: #cfdae5; line-height: 1.7; }
+.stance-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.stance-prompt { font-size: 12px; color: var(--text-3); }
+
+/* ---------- 信念推演 ---------- */
+.inference {
+  max-width: 1240px; margin: 26px auto 0; padding: 22px 32px;
+}
+.inference.hidden { display: none; }
+.inf-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.inf-title {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .26em;
+  color: var(--consensus); text-transform: uppercase;
+}
+.inf-sub { font-size: 12px; color: var(--text-3); }
+.inf-headline {
+  font-family: var(--serif); font-size: 19px; line-height: 1.65;
+  color: #eaf1f8; padding: 16px 20px; margin-bottom: 20px;
+  border-left: 2px solid var(--consensus);
+  background: linear-gradient(90deg, rgba(53,214,164,.07), transparent);
+}
+.inf-body { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.inf-block-label {
+  font-size: 10px; font-family: var(--mono); letter-spacing: .16em;
+  color: var(--text-3); margin-bottom: 10px; text-transform: uppercase;
+}
+.proj-item {
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px;
+  margin-bottom: 8px; cursor: pointer; transition: all .18s;
+}
+.proj-item:hover { border-color: var(--line-2); background: rgba(255,255,255,.02); }
+.proj-issue { font-size: 12.5px; color: var(--text-2); margin-bottom: 4px; }
+.proj-lean { font-size: 13.5px; color: var(--consensus); }
+.proj-lean strong { font-weight: 600; }
+.proj-why { font-size: 10.5px; color: var(--text-3); margin-top: 4px; font-family: var(--mono); }
+.cost-item {
+  padding: 10px 12px; border: 1px solid rgba(229,83,75,.25); border-radius: 6px;
+  margin-bottom: 8px; background: rgba(229,83,75,.04);
+}
+.cost-text { font-size: 13px; color: #e8cfcd; line-height: 1.6; }
+.cost-clash { font-size: 10.5px; color: #ff8078; margin-top: 5px; font-family: var(--mono); }
+
+/* ---------- 边缘区 ---------- */
+.edges {
+  max-width: 1240px; margin: 30px auto 0; padding: 0 32px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+}
+.edge-col { border-top: 1px solid var(--line); padding-top: 16px; }
+.edge-title { font-size: 12px; color: var(--text-2); margin-bottom: 12px; letter-spacing: .06em; }
+.edge-sub { font-size: 10px; color: var(--text-3); font-family: var(--mono); margin-left: 6px; }
+.edge-list { display: flex; flex-direction: column; gap: 10px; }
+.edge-item { font-size: 12.5px; color: var(--text-2); line-height: 1.65; padding-left: 12px; border-left: 1px solid var(--line-2); }
+.edge-item strong { color: var(--text); font-weight: 500; }
+
+/* ---------- 页脚 ---------- */
+.foot {
+  max-width: 1240px; margin: 40px auto 0; padding: 18px 32px 0;
+  border-top: 1px solid var(--line);
+  font-size: 11px; color: var(--text-3); font-family: var(--mono);
+  display: flex; gap: 8px;
+}
+.foot-sep { opacity: .4; }
+.foot-link { color: var(--text-2); text-decoration: none; border-bottom: 1px dotted var(--line-2); }
+.foot-link:hover { color: var(--text); border-bottom-color: var(--text-3); }
+
+/* ---------- 弹窗 ---------- */
+.modal {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(5,8,11,.72); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.modal.hidden { display: none; }
+.modal-box {
+  background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 12px;
+  padding: 24px; width: 100%; max-width: 640px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.6);
+}
+.modal-box.narrow { max-width: 460px; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.modal-head h3 { font-size: 16px; font-weight: 500; }
+.modal-hint { font-size: 12.5px; color: var(--text-2); line-height: 1.7; margin-bottom: 14px; }
+.modal-hint code { font-family: var(--mono); background: rgba(255,255,255,.06); padding: 1px 5px; border-radius: 3px; }
+#importText {
+  width: 100%; height: 240px; resize: vertical;
+  background: rgba(0,0,0,.35); color: var(--text);
+  border: 1px solid var(--line-2); border-radius: 8px; padding: 12px;
+  font-family: var(--sans); font-size: 13px; line-height: 1.7;
+}
+#importText:focus { outline: none; border-color: #3d8dd8; }
+.modal-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 14px; gap: 8px 12px; }
+.modal-foot .mini { flex-basis: 100%; }
+.check { font-size: 12.5px; color: var(--text-2); display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.mini { font-size: 11px; color: var(--text-3); font-family: var(--sans); }
+.mini.warn { color: var(--value); }
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.field span { font-size: 11px; font-family: var(--mono); color: var(--text-3); letter-spacing: .1em; }
+.field input {
+  background: rgba(0,0,0,.35); border: 1px solid var(--line-2); border-radius: 6px;
+  padding: 9px 11px; color: var(--text); font-size: 13px; font-family: var(--mono);
+}
+.field input:focus { outline: none; border-color: #3d8dd8; }
+.probe-result { margin-top: 10px; font-size: 12px; font-family: var(--mono); color: var(--text-2); }
+
+/* ---------- 状态 ---------- */
+.loading-overlay {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(6,9,12,.82); backdrop-filter: blur(3px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+}
+.loading-overlay.hidden { display: none; }
+.loader-line { width: 260px; height: 2px; background: var(--line); overflow: hidden; border-radius: 2px; }
+.loader-line i { display: block; height: 100%; width: 40%; background: linear-gradient(90deg, transparent, var(--fact), transparent); animation: sweep 1.4s infinite; }
+@keyframes sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+.loading-text { font-size: 12.5px; color: var(--text-2); font-family: var(--mono); letter-spacing: .06em; }
+/* 有真实进度时切成确定条：去掉扫光动画，宽度按阶段推进 */
+.loading-overlay.determinate .loader-line i {
+  width: 4%; animation: none; transform: none;
+  background: linear-gradient(90deg, var(--fact), #7cc4ff);
+  transition: width .45s ease;
+  box-shadow: 0 0 12px rgba(77,163,255,.55);
+}
+.loading-pct { font-size: 11px; color: var(--text-3); font-family: var(--mono); letter-spacing: .14em; }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 900px) {
+  .question { font-size: 22px; }
+  .split-grid { grid-template-columns: 1fr; }
+  .crack-col { height: 80px; }
+  .side-a { align-items: flex-start; padding-right: 0; }
+  .side-b { padding-left: 0; }
+  .side-a .cards { align-items: flex-start; }
+  .inf-body, .edges { grid-template-columns: 1fr; }
+  .topbar { padding: 12px 16px; }
+  .qbar, .overview-wrap, .split-wrap, .inference, .edges, .foot { padding-left: 16px; padding-right: 16px; }
+}
+
+/* ---------------- 知乎拉取面板 ---------------- */
+.zhihu-panel {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.015);
+  margin: 4px 0 14px;
+}
+.zhihu-panel > summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--text-2);
+  letter-spacing: .02em;
+  user-select: none;
+}
+.zhihu-panel > summary:hover { color: var(--fact); }
+.zhihu-panel[open] > summary { border-bottom: 1px solid var(--line); }
+.zhihu-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.zhihu-row { display: flex; gap: 8px; }
+.zhihu-row input { flex: 1; }
+.zhihu-list { display: flex; flex-direction: column; gap: 6px; max-height: 168px; overflow-y: auto; }
+.zhihu-q {
+  text-align: left;
+  background: rgba(77, 163, 255, .06);
+  border: 1px solid rgba(77, 163, 255, .22);
+  color: var(--text-1);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  font-family: var(--sans);
+  cursor: pointer;
+  line-height: 1.45;
+}
+.zhihu-q:hover:not(:disabled) { background: rgba(77, 163, 255, .14); border-color: var(--fact); }
+.zhihu-q:disabled { opacity: .5; cursor: default; }
+
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-cn">歧见</span>
+    <span class="brand-en">FAULT&nbsp;LINES</span>
+    <span class="brand-tag">不告诉你答案，告诉你答案为什么分成两半</span>
+  </div>
+  <div class="topbar-right">
+    <select id="datasetSelect" class="ghost-select" title="切换示例数据集"></select>
+    <button class="btn ghost" id="btnImport">导入回答</button>
+    <button class="btn ghost" id="btnSettings">
+      <span class="dot" id="engineDot"></span>引擎
+    </button>
+  </div>
+</header>
+
+<section class="qbar">
+  <h1 class="question" id="questionTitle">加载中…</h1>
+  <div class="chips" id="chips"></div>
+  <div class="source" id="sourceNote"></div>
+  <div class="notice hidden" id="notice"></div>
+</section>
+
+<!-- 视图一：断层总图（岩层 + 裂缝） -->
+<section class="overview-wrap">
+  <div class="section-label">断层总图 · 点击裂缝进入剖面</div>
+  <svg id="overview" class="overview" viewBox="0 0 1200 190" preserveAspectRatio="xMidYMid meet"></svg>
+</section>
+
+<!-- 视图二：单争点剖面 -->
+<section class="split-wrap" id="splitWrap">
+  <div class="split-head">
+    <span class="fault-tag" id="faultTag">—</span>
+    <h2 class="split-title" id="splitTitle">选择一个裂缝</h2>
+  </div>
+
+  <div class="split-grid">
+    <div class="side side-a" id="sideA">
+      <div class="side-label" id="labelA">立场 A</div>
+      <div class="cards" id="cardsA"></div>
+    </div>
+
+    <div class="crack-col">
+      <svg id="crack" viewBox="0 0 120 460" preserveAspectRatio="none"></svg>
+      <div class="crack-note" id="crackNote"></div>
+    </div>
+
+    <div class="side side-b" id="sideB">
+      <div class="side-label" id="labelB">立场 B</div>
+      <div class="cards" id="cardsB"></div>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <div class="verdict-row">
+      <span class="verdict-key">真正分歧</span>
+      <p class="verdict-val" id="faultReason">—</p>
+    </div>
+    <div class="verdict-row">
+      <span class="verdict-key">如何裁决</span>
+      <p class="verdict-val" id="resolveBy">—</p>
+    </div>
+    <div class="stance-row" id="stanceRow">
+      <span class="stance-prompt">如果一定要选边：</span>
+      <button class="btn stance" data-side="A" id="stanceA">站 A</button>
+      <button class="btn stance" data-side="B" id="stanceB">站 B</button>
+      <button class="btn ghost small" id="clearStance">清空</button>
+    </div>
+  </div>
+</section>
+
+<!-- 视图三：信念推演 -->
+<section class="inference hidden" id="inference">
+  <div class="inf-head">
+    <span class="inf-title">信念推演</span>
+    <span class="inf-sub" id="infSub"></span>
+  </div>
+  <p class="inf-headline" id="infHeadline"></p>
+  <div class="inf-body">
+    <div class="inf-block">
+      <div class="inf-block-label">你在其他争点上被绑定到</div>
+      <div id="infProjections" class="proj-list"></div>
+    </div>
+    <div class="inf-block">
+      <div class="inf-block-label">你必须付出的代价</div>
+      <div id="infCosts" class="cost-list"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 边缘区域 -->
+<section class="edges">
+  <div class="edge-col">
+    <div class="edge-title">孤证区 <span class="edge-sub">只有一个人这么说</span></div>
+    <div id="isolatedList" class="edge-list"></div>
+  </div>
+  <div class="edge-col">
+    <div class="edge-title">沉默的多数 <span class="edge-sub">高赞，但没有参与争论</span></div>
+    <div id="silentList" class="edge-list"></div>
+  </div>
+</section>
+
+<footer class="foot">
+  <span id="engineStatus">引擎检测中…</span>
+  <span class="foot-sep">·</span>
+  <span>示例数据为公开讨论重构，非知乎原文引用</span>
+  <span class="foot-sep">·</span>
+  <a class="foot-link" href="./README.md" target="_blank" rel="noopener">作品说明</a>
+  <a class="foot-link" href="./docs/10-产品说明计划书.md" target="_blank" rel="noopener">产品说明</a>
+  <a class="foot-link" href="./演示视频.mp4" target="_blank" rel="noopener">演示视频</a>
+</footer>
+
+<!-- 导入弹窗 -->
+<div class="modal hidden" id="importModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>导入回答</h3>
+      <button class="btn ghost small" data-close>关闭</button>
+    </div>
+    <p class="modal-hint">
+      把同一个知乎问题下的若干条回答正文粘贴进来。用空行（连续两次回车）或 <code>---</code> 分隔不同回答。
+      内容只在本机处理，不会上传。
+    </p>
+    <label class="field"><span>问题标题（可空）</span><input id="importTitle" placeholder="比如：为什么现在的年轻人越来越不愿意结婚生子？" /></label>
+
+    <!-- 从知乎开放平台拉真实回答（需要 node server.mjs 起代理 + Access Secret） -->
+    <details class="zhihu-panel" id="zhihuPanel">
+      <summary>从知乎直接拉一个真问题（可选）</summary>
+      <div class="zhihu-body">
+        <div class="zhihu-row">
+          <input id="zhihuTopic" placeholder="话题关键词，例如：AI Agent / 远程办公" />
+          <button class="btn ghost small" id="btnZhihuTopic">找问题</button>
+        </div>
+        <label class="field"><span>Access Secret（只存在本机，经本机代理转发）</span>
+          <input id="zhihuSecret" type="password" placeholder="在 developer.zhihu.com 个人中心获取" />
+        </label>
+        <div class="zhihu-list" id="zhihuList">
+          <p class="mini">填入 Secret 与话题，点「找问题」。拉到的回答会填进下面的输入框，再点「生成断层图」。</p>
+        </div>
+        <p class="mini" id="zhihuNote"></p>
+      </div>
+    </details>
+
+    <textarea id="importText" placeholder="回答一……&#10;&#10;回答二……&#10;&#10;回答三……"></textarea>
+    <div class="modal-foot">
+      <label class="check"><input type="checkbox" id="useLLM" checked /> 使用本地模型抽取（更准，较慢）</label>
+      <span class="mini" id="llmHint"></span>
+      <button class="btn primary" id="btnAnalyze">生成断层图</button>
+    </div>
+  </div>
+</div>
+
+<!-- 设置弹窗 -->
+<div class="modal hidden" id="settingsModal">
+  <div class="modal-box narrow">
+    <div class="modal-head">
+      <h3>引擎设置</h3>
+      <button class="btn ghost small" data-close>关闭</button>
+    </div>
+    <p class="modal-hint">默认使用本机 Ollama。也可以切到任意模型商，或填任意 OpenAI 兼容端点；Key 只保存在浏览器本地。</p>
+    <label class="field"><span>模型商</span><select id="cfgProvider"></select></label>
+    <label class="field"><span>Base URL</span><input id="cfgBase" placeholder="http://127.0.0.1:11434/v1" /></label>
+    <label class="field"><span>模型</span><input id="cfgModel" placeholder="qwen3.5:4b" /></label>
+    <label class="field"><span>API Key（可空）</span><input id="cfgKey" type="password" placeholder="sk-..." /></label>
+    <div class="probe-result" id="cfgNote"></div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="btnProbe">测试连接</button>
+      <button class="btn primary" id="btnSaveCfg">保存</button>
+    </div>
+    <div class="probe-result" id="probeResult"></div>
+  </div>
+</div>
+
+<script>
+/* 歧见 · Fault Lines — 单文件离线版（由 tools/bundle.mjs 生成，勿手改） */
+(function () {
+'use strict';
+const __M = {};
+
+/* ==== module: llm (src/engine/llm.js) ==== */
+__M['llm'] = (function () {
+/**
+ * LLM 适配层
+ *
+ * 默认指向本机 Ollama（OpenAI 兼容协议），无需任何 API Key。
+ * 也支持填任意 OpenAI 兼容端点（云端 Key 只在浏览器 localStorage，不上传）。
+ * 所有调用都有超时与重试上限——黑客松现场最怕的是界面卡死。
+ */
+
+const DEFAULTS = {
+  baseUrl: 'http://127.0.0.1:11434/v1',
+  model: 'qwen3.5:4b',
+  apiKey: '',
+  timeoutMs: 90000,
+  // qwen3.5 等 reasoning 模型默认会把 token 全烧在思维链上、content 返回空。
+  // 关闭思考后同一任务从 32s/空返回 变成 3.5s/干净 JSON。
+  disableThinking: true
+};
+
+const STORAGE_KEY = 'qijian.llm.config';
+
+function loadConfig() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { ...DEFAULTS };
+    return { ...DEFAULTS, ...JSON.parse(raw) };
+  } catch {
+    return { ...DEFAULTS };
+  }
+}
+
+function saveConfig(cfg) {
+  const merged = { ...loadConfig(), ...cfg };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+  return merged;
+}
+
+/** 探测端点是否可用，返回 {ok, models[], error} */
+async function probe(cfg = loadConfig()) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    const res = await fetch(`${cfg.baseUrl.replace(/\/$/, '')}/models`, {
+      signal: ctrl.signal,
+      headers: cfg.apiKey ? { Authorization: `Bearer ${cfg.apiKey}` } : {}
+    });
+    if (!res.ok) return { ok: false, models: [], error: `HTTP ${res.status}` };
+    const data = await res.json();
+    const models = (data.data || []).map((m) => m.id);
+    return { ok: true, models, error: null };
+  } catch (err) {
+    return { ok: false, models: [], error: err.name === 'AbortError' ? '连接超时' : err.message };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** 从可能带 markdown 围栏或前后废话的文本里抠出第一个完整 JSON 对象 */
+function matchFrom(s, start) {
+  const openCh = s[start];
+  const closeCh = openCh === '{' ? '}' : ']';
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+
+  for (let i = start; i < s.length; i++) {
+    const ch = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === openCh) depth++;
+    else if (ch === closeCh) {
+      depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(s.slice(start, i + 1));
+        } catch {
+          return undefined;
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+function salvageJSON(text) {
+  if (!text) return null;
+  let s = String(text).trim();
+  s = s.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+
+  // 候选起点必须「不在字符串内部」——否则散文里的引号会把花括号带偏
+  const starts = [];
+  let inStr = false;
+  let esc = false;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === '{' || ch === '[') starts.push(i);
+  }
+
+  for (const start of starts) {
+    const parsed = matchFrom(s, start);
+    if (parsed !== undefined) return parsed;
+  }
+  return null;
+}
+
+/**
+ * 单轮结构化调用。返回解析后的对象，失败抛错（由上层决定是否降级）。
+ */
+/**
+ * 单轮结构化调用（当前实现）。
+ *
+ * 关键点：reasoning 模型（qwen3.5 等）默认会把 token 全部烧在思维链上，
+ * content 返回空字符串——实测 32 秒、1401 字推理、0 字正文。
+ * 加 reasoning_effort:'none' 后同一任务 3.5 秒返回干净 JSON。
+ * 拿不到正文时快速失败，不要静默等到超时。
+ */
+async function chatJSON({ system, user, cfg = loadConfig(), temperature = 0.2 }) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), cfg.timeoutMs || DEFAULTS.timeoutMs);
+  const url = cfg.baseUrl.replace(/\/+$/, '') + '/chat/completions';
+  const baseBody = {
+    model: cfg.model,
+    temperature,
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: user }
+    ]
+  };
+  const noThink = cfg.disableThinking === false ? {} : { reasoning_effort: 'none' };
+
+  const send = async (extra) => {
+    const res = await fetch(url, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(cfg.apiKey ? { Authorization: 'Bearer ' + cfg.apiKey } : {})
+      },
+      body: JSON.stringify(Object.assign({}, baseBody, extra))
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      const err = new Error('HTTP ' + res.status + ' ' + body.slice(0, 200));
+      err.status = res.status;
+      throw err;
+    }
+    return res.json();
+  };
+
+  try {
+    let data;
+    try {
+      data = await send(noThink);
+    } catch (err) {
+      // 严格实现可能不认 reasoning_effort / response_format：退一步再试一次
+      if (err.status === 400 || err.status === 422) {
+        data = await send({});
+      } else if (err.status >= 500) {
+        // 本地推理偶发 500（实测：llama-server 生成中途内部错误）。
+        // 重试一次往往就过去了，别让一次瞬时故障把整轮分析打成降级。
+        await new Promise((r) => setTimeout(r, 400));
+        data = await send(noThink);
+      } else {
+        throw err;
+      }
+    }
+    const msg = (data && data.choices && data.choices[0] && data.choices[0].message) || {};
+    const text = msg.content || '';
+    const thinking = msg.reasoning_content || msg.reasoning || '';
+    if (!text && thinking) {
+      throw new Error('模型把 token 全用在思维链上，正文为空（' + thinking.length + ' 字推理）：请关闭 thinking 或换非 reasoning 模型');
+    }
+    const parsed = salvageJSON(text);
+    if (!parsed) throw new Error('模型返回无法解析为 JSON：' + text.slice(0, 120));
+    return parsed;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function chatJSONLegacy({ system, user, cfg = loadConfig(), temperature = 0.2 }) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), cfg.timeoutMs || DEFAULTS.timeoutMs);
+  try {
+    const res = await fetch(`${cfg.baseUrl.replace(/\/$/, '')}/chat/completions`, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(cfg.apiKey ? { Authorization: `Bearer ${cfg.apiKey}` } : {})
+      },
+      body: JSON.stringify({
+        model: cfg.model,
+        temperature,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user }
+        ]
+      })
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status} ${body.slice(0, 200)}`);
+    }
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content || '';
+    const parsed = salvageJSON(text);
+    if (!parsed) throw new Error('模型返回无法解析为 JSON');
+    return parsed;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+return { loadConfig, saveConfig, probe, salvageJSON, chatJSON };
+})();
+
+/* ==== module: providers (src/engine/providers.js) ==== */
+__M['providers'] = (function () {
+/**
+ * 模型商适配层
+ *
+ * 目标：用户自带 Key，选一家就能用；不绑定任何一家，也不把 Key 传到我们这里
+ * （Key 只存在浏览器 localStorage，只发往用户选的那家端点）。
+ *
+ * 全部按 OpenAI 兼容协议接（chat/completions + models），
+ * 这是目前国内主流厂商都提供的网关形态，也顺带兼容本地 Ollama。
+ */
+
+/** 预置模型商。baseUrl 都可以在设置里手改，这里只是省得用户查文档。 */
+const PROVIDERS = [
+  {
+    id: 'ollama',
+    label: '本机 Ollama（无需 Key）',
+    baseUrl: 'http://127.0.0.1:11434/v1',
+    models: ['qwen3.5:4b', 'qwen2.5-coder:1.5b'],
+    needsKey: false,
+    note: '免费、数据不出本机；4B 模型写作偏弱，适合结构分析。'
+  },
+  {
+    id: 'deepseek',
+    label: 'DeepSeek',
+    baseUrl: 'https://api.deepseek.com/v1',
+    models: ['deepseek-chat', 'deepseek-reasoner'],
+    needsKey: true,
+    note: '中文写作性价比高。deepseek-reasoner 是推理模型，可能返回空正文。'
+  },
+  {
+    id: 'dashscope',
+    label: '阿里云百炼（通义千问）',
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    models: ['qwen-plus', 'qwen-max', 'qwen-turbo'],
+    needsKey: true,
+    note: '兼容模式；长文写作选 qwen-max。'
+  },
+  {
+    id: 'moonshot',
+    label: '月之暗面 Kimi',
+    baseUrl: 'https://api.moonshot.cn/v1',
+    models: ['moonshot-v1-32k', 'moonshot-v1-128k'],
+    needsKey: true,
+    note: '上下文长，适合把整批回答塞进去做对照。'
+  },
+  {
+    id: 'zhipu',
+    label: '智谱 GLM',
+    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    models: ['glm-4-plus', 'glm-4-flash'],
+    needsKey: true,
+    note: 'glm-4-flash 便宜，适合反复改稿。'
+  },
+  {
+    id: 'openai',
+    label: 'OpenAI',
+    baseUrl: 'https://api.openai.com/v1',
+    models: ['gpt-4o-mini', 'gpt-4o'],
+    needsKey: true,
+    note: '需要能直连的出口。'
+  },
+  {
+    id: 'custom',
+    label: '自定义（任意 OpenAI 兼容端点）',
+    baseUrl: '',
+    models: [],
+    needsKey: true,
+    note: '中转站、私有部署、公司内网网关都填这里。'
+  }
+];
+
+function getProvider(id) {
+  return PROVIDERS.find((p) => p.id === id) || PROVIDERS[0];
+}
+
+/**
+ * 把「选中的模型商」落到一份配置上。
+ * 只覆盖 baseUrl / model / providerId，不动 apiKey —— 切厂商时旧 Key 不该被自动沿用，
+ * 但也不该被静默清空，所以这里保留原值，由 UI 提示用户重新填。
+ */
+function applyProvider(cfg, providerId, model) {
+  const p = getProvider(providerId);
+  const next = { ...cfg, providerId: p.id };
+  if (p.baseUrl) next.baseUrl = p.baseUrl;
+  const picked = model || (p.models && p.models[0]);
+  if (picked) next.model = picked;
+  return next;
+}
+
+/** 校验一份配置能不能发请求；返回 {ok, error} */
+function validateConfig(cfg) {
+  if (!cfg) return { ok: false, error: '配置为空' };
+  if (!cfg.baseUrl) return { ok: false, error: '未填写端点地址（Base URL）' };
+  if (!/^https?:\/\//.test(cfg.baseUrl)) return { ok: false, error: '端点必须以 http:// 或 https:// 开头' };
+  if (!cfg.model) return { ok: false, error: '未选择模型' };
+  const p = getProvider(cfg.providerId);
+  if (p.needsKey && !cfg.apiKey) return { ok: false, error: `${p.label} 需要 API Key` };
+  return { ok: true, error: null };
+}
+
+/**
+ * 打码展示 Key，用于界面上回显"已配置"而不泄露。
+ * 只保留前 4 位与后 4 位。
+ */
+function maskKey(key) {
+  if (!key) return '';
+  const s = String(key);
+  if (s.length <= 10) return '••••';
+  return s.slice(0, 4) + '••••' + s.slice(-4);
+}
+return { PROVIDERS, getProvider, applyProvider, validateConfig, maskKey };
+})();
+
+/* ==== module: datasets (src/data/datasets.js) ==== */
+__M['datasets'] = (function () {
+/**
+ * 示例数据集
+ *
+ * 诚实声明：以下内容为依据公开讨论中常见论点重构的演示数据，不是知乎原文引用，
+ * 作者名已匿名化。产品真实使用时，内容由使用者自行导入（粘贴回答正文）；
+ * 接入知乎开放接口后可直接替换本文件。
+ *
+ * 字段说明：
+ *   answers[].excerpt      该回答的核心一句话（原文摘录或重构）
+ *   claims[]               原子主张：type 决定能否被证据裁决，premiseTags 是信念推演的连接点
+ *   issues[]               争点：fault 是断层类型，faultReason 说明分歧的真正来源
+ */
+
+const DATASETS = [
+  {
+    id: 'marriage',
+    title: '为什么现在的年轻人越来越不愿意结婚生子？',
+    source: '示例数据（依据公开讨论重构，非知乎原文引用）',
+    stats: { answers: 812, followers: 24317 },
+    answers: [
+      {
+        id: 'a1',
+        author: '匿名用户 A',
+        votes: 23841,
+        excerpt:
+          '婚姻本质上是一份长期合约，年轻人只是把这份合约的成本算清楚了。一线城市从结婚到孩子大学毕业，总投入约为家庭年收入的 15-20 倍，而这份投入的预期回报（情感支持、养老、抗风险）正在被市场化的服务替代。算完账不签约，是理性选择，不是逃避。'
+      },
+      {
+        id: 'a2',
+        author: '匿名用户 B',
+        votes: 15206,
+        excerpt:
+          '把不婚归因于钱，是最省事的解释，也是最偷懒的。日本经济停滞了三十年，结婚率下降的速度比经济下滑还快。真正变的是观念：上一代把婚姻当成必需品，这一代把它当成可选项。尤其是女性，经济独立之后，传统婚姻里的净收益是负的——多承担家务和育儿，却换不来对等的资源。'
+      },
+      {
+        id: 'a3',
+        author: '匿名用户 C',
+        votes: 9612,
+        excerpt:
+          '很少人讨论制度。离婚冷静期提高了退出成本，财产分割的不确定性提高了风险溢价，托育和产假成本几乎全部私人化——这三件事加起来，等于告诉年轻人：进入要谨慎，退出很困难。理性人面对这样的制度设计，当然会降低进入意愿。这不是观念问题，是规则问题。'
+      },
+      {
+        id: 'a4',
+        author: '匿名用户 D',
+        votes: 7104,
+        excerpt:
+          '我不谈宏观。我只说我看到的：我父母吵了三十年，我从小到大的愿望就是不要变成他们那样。我今年 31，不结婚，也不觉得缺什么。婚姻对我来说不是必需品，是一件如果有更好、没有也行的东西。我身边很多同龄人是同样的想法，我们不是结不起，是祛魅了。'
+      },
+      {
+        id: 'a5',
+        author: '匿名用户 E',
+        votes: 4388,
+        excerpt:
+          '反驳最高赞。经济决定论在日本身上就失效了：1990 年代之后日本经济长期停滞，但结婚率的下降斜率比 GDP 更陡。如果一个变量下降得比另一个变量更快，就不能说前者是后者的函数。观念是独立的变量，而且是更难逆转的那个。'
+      },
+      {
+        id: 'a6',
+        author: '匿名用户 F',
+        votes: 2871,
+        excerpt:
+          '这是两个层次的问题，被混在一起吵。经济决定「能不能」——这是约束条件；观念决定「想不想」——这是偏好。约束放松了偏好不变，结果不会变；偏好变了约束不变，结果也不会变。非要选一个「主因」，是在问一个错误的问题。'
+      }
+    ],
+    claims: [
+      {
+        id: 'k1',
+        answerId: 'a1',
+        text: '一线城市结婚到育儿的总投入约为家庭年收入的 15-20 倍，超过多数人的支付能力。',
+        type: 'fact',
+        premiseTags: ['经济决定论', '理性人假设'],
+        evidence: '成本估算（住房、教育、医疗、时间机会成本）'
+      },
+      {
+        id: 'k2',
+        answerId: 'a1',
+        text: '婚姻的预期收益（情感支持、养老保障、抗风险）正在被市场化服务与社会保障替代。',
+        type: 'fact',
+        premiseTags: ['经济决定论', '制度替代'],
+        evidence: '服务业与社保覆盖的扩张'
+      },
+      {
+        id: 'k3',
+        answerId: 'a1',
+        text: '如果住房与教育成本下降一半，结婚率会明显回升。',
+        type: 'prediction',
+        premiseTags: ['经济决定论', '理性人假设'],
+        evidence: '无反例检验，属未验证推断'
+      },
+      {
+        id: 'k4',
+        answerId: 'a2',
+        text: '婚姻从「必需品」变为「可选项」，这是社会进步而非危机。',
+        type: 'value',
+        premiseTags: ['个人主义', '选择自由'],
+        evidence: '规范性判断，不可由数据裁决'
+      },
+      {
+        id: 'k5',
+        answerId: 'a2',
+        text: '女性经济独立后，传统婚姻对女性的净收益为负（承担更多家务与育儿，资源不对等）。',
+        type: 'fact',
+        premiseTags: ['性别视角', '理性人假设'],
+        evidence: '家务与育儿时间的性别分工统计'
+      },
+      {
+        id: 'k6',
+        answerId: 'a2',
+        text: '观念变化是主因：日本经济停滞三十年，结婚率下降斜率比经济下滑更陡。',
+        type: 'fact',
+        premiseTags: ['跨国比较', '观念独立变量'],
+        evidence: '日本 1990-2020 结婚率与 GDP 增速对比'
+      },
+      {
+        id: 'k7',
+        answerId: 'a3',
+        text: '制度设计提高了婚姻的退出成本（离婚冷静期、财产分割不确定性），从而降低了进入意愿。',
+        type: 'causal',
+        premiseTags: ['制度决定论'],
+        evidence: '制度变更与登记量变化的时间对应'
+      },
+      {
+        id: 'k8',
+        answerId: 'a3',
+        text: '托育与产假成本几乎完全私人化，使育儿成为家庭的独资项目。',
+        type: 'fact',
+        premiseTags: ['制度决定论', '经济决定论'],
+        evidence: '公共托育覆盖率与生育率的跨国对比'
+      },
+      {
+        id: 'k9',
+        answerId: 'a5',
+        text: '日本案例证明观念是独立于经济的变量，且更难逆转。',
+        type: 'causal',
+        premiseTags: ['跨国比较', '观念独立变量'],
+        evidence: '单一国别案例，未排除其他混淆变量'
+      },
+      {
+        id: 'k10',
+        answerId: 'a6',
+        text: '经济与观念分属「能不能」与「想不想」两个层次，追问单一主因是错误的问题。',
+        type: 'value',
+        premiseTags: ['层次区分'],
+        evidence: '方法论判断'
+      },
+      {
+        id: 'k11',
+        answerId: 'a4',
+        text: '目睹父母婚姻质量后对婚姻祛魅，是这一代人的普遍经验。',
+        type: 'value',
+        premiseTags: ['代际经验', '个人主义'],
+        evidence: '个人叙事，样本量为 1'
+      }
+    ],
+    issues: [
+      {
+        id: 'i1',
+        title: '不结婚的主因是经济压力，还是观念变化？',
+        fault: 'fact',
+        sideA: { label: '经济压力', claimIds: ['k1', 'k2', 'k8'] },
+        sideB: { label: '观念变化', claimIds: ['k5', 'k6', 'k9'] },
+        faultReason:
+          '双方都在用「主因」这个词，但一方指的是约束条件（能不能），一方指的是意愿（想不想）。这是定义分歧伪装成了事实分歧——所以两边都能拿出数据，且都不算错。',
+        resolveBy:
+          '需要的数据：控制收入水平后，比较同城市、收入分位但观念不同的群体的结婚率差异。若差异主要由观念解释，则 B 方胜；若主要由收入解释，则 A 方胜。',
+        strengthA: 0.78,
+        strengthB: 0.72
+      },
+      {
+        id: 'i2',
+        title: '如果结婚成本下降一半，结婚率会回升吗？',
+        fault: 'prediction',
+        sideA: { label: '会回升', claimIds: ['k3'] },
+        sideB: { label: '不会，观念不可逆', claimIds: ['k6'] },
+        faultReason:
+          '这是一个关于未来的断言，双方都无法在当下提供证据。A 方假设偏好稳定、约束主导；B 方假设偏好已永久位移。两套假设都自洽。',
+        resolveBy:
+          '观察信号：若出现大规模住房/托育补贴政策（如新加坡、韩国模式）后 3-5 年结婚率无显著反弹，则 B 方胜。韩国 2015 年后的补贴实验已提供了部分反证。',
+        strengthA: 0.42,
+        strengthB: 0.66
+      },
+      {
+        id: 'i3',
+        title: '应该改革婚姻与育儿制度，还是不该干预个人选择？',
+        fault: 'value',
+        sideA: { label: '制度改革', claimIds: ['k7', 'k8'] },
+        sideB: { label: '无需干预', claimIds: ['k4'] },
+        faultReason:
+          '这不是事实分歧。A 方认为低生育率是需要解决的公共问题，B 方认为它根本不是一个问题。这个分歧无法用数据解决——它取决于你把「社会延续」排在「个人自由」之前还是之后。',
+        resolveBy: '不可由证据解决。这是价值排序的投票，不是判断题。',
+        strengthA: 0.6,
+        strengthB: 0.6
+      },
+      {
+        id: 'i4',
+        title: '把不婚归因于经济压力，是不是一种偷懒的解释？',
+        fault: 'fact',
+        sideA: { label: '是，经济决定论失效', claimIds: ['k9'] },
+        sideB: { label: '否，成本就是硬约束', claimIds: ['k1'] },
+        faultReason:
+          '争论的其实是「跨国比较能不能用于个体归因」。A 方用日本做宏观反例，B 方用中国一线城市做微观成本测算——两个证据在不同的分析层级上，彼此并不直接冲突。',
+        resolveBy:
+          '需要的数据：同一国家内部的跨城市比较（成本差异大、观念差异小），若结婚率随成本梯度显著变化，则 B 方在本土语境下成立。',
+        strengthA: 0.5,
+        strengthB: 0.62
+      }
+    ],
+    consensus: [
+      { text: '住房与育儿成本相对于年轻家庭收入偏高——A、B、C、F 四方都默认这一点，只有 B 认为它不是主因。', answerIds: ['a1', 'a2', 'a3', 'a6'] },
+      { text: '婚姻已不再是唯一能提供养老与情感支持的制度。', answerIds: ['a1', 'a2', 'a4', 'a6'] },
+      { text: '上一代人的婚姻样本，实质影响了这一代人的预期。', answerIds: ['a2', 'a4', 'a6'] }
+    ],
+    isolated: [
+      {
+        claimId: 'k9',
+        note: '日本反例只有一位答主提出，且无人正面回应。它可能是一个被忽略的关键证据，也可能只是选择性举例——系统不作判断。'
+      }
+    ],
+    silentMajority: [
+      {
+        answerId: 'a4',
+        note: '高赞，但通篇是个人叙事，没有与任何一方形成论据对抗。它提供的价值是「祛魅这种经验的普遍性」，属于背景事实而非论点。'
+      }
+    ]
+  },
+
+  {
+    id: 'phd',
+    title: '读博到底值不值得？',
+    source: '示例数据（依据公开讨论重构，非知乎原文引用）',
+    stats: { answers: 436, followers: 15820 },
+    answers: [
+      {
+        id: 'b1',
+        author: '匿名用户 G',
+        votes: 12043,
+        excerpt:
+          '值得。博士训练的不是知识，是「把一个模糊的问题定义成可研究的问题」的能力，这个能力在工业界同样稀缺。而且它是进入学术界的唯一门票——如果你想去高校，这个问题没有第二个答案。'
+      },
+      {
+        id: 'b2',
+        author: '匿名用户 H',
+        votes: 18077,
+        excerpt:
+          '算笔账。四年博士的机会成本约为同期进入工业界的收入总和，加上延毕风险、35 岁年龄门槛、非升即走的淘汰率。把这几项折现，期望值为负。除非你满足三个条件：导师靠谱、方向有产业出口、你不排斥科研本身，否则不要读。'
+      },
+      {
+        id: 'b3',
+        author: '匿名用户 I',
+        votes: 6033,
+        excerpt:
+          '这个问题不能一概而论。理工科博士有产业出口（芯片、生物医药、AI），人文社科博士的主要出口是高校，而高校教职在收缩。同一个问题在不同学科里的答案完全相反，所以「读博值不值」这个提问方式本身就是错的。'
+      },
+      {
+        id: 'b4',
+        author: '匿名用户 J',
+        votes: 9105,
+        excerpt:
+          '我不接受用期望值来算这件事。读博是一种生活方式的投票：你愿不愿意用四年时间，换一个可以一辈子追问同一个问题的资格。如果答案是不能，那期望值再正也不该读；如果能，期望值为负也值得。'
+      },
+      {
+        id: 'b5',
+        author: '匿名用户 K',
+        votes: 3120,
+        excerpt:
+          '一个观察：网上劝退最凶的人，往往自己读完了博且过得不错。他们的劝退是「我吃了苦所以你也要吃」的变体，而不是客观评估。真正读完且后悔的人，反而很少发声。'
+      }
+    ],
+    claims: [
+      {
+        id: 'm1',
+        answerId: 'b1',
+        text: '博士训练的核心产物是「把模糊问题定义成可研究问题」的能力，该能力在工业界同样稀缺。',
+        type: 'fact',
+        premiseTags: ['能力本位', '学术价值'],
+        evidence: '招聘市场对研究岗位的要求'
+      },
+      {
+        id: 'm2',
+        answerId: 'b1',
+        text: '博士是进入高校教职的唯一门票。',
+        type: 'fact',
+        premiseTags: ['学术路径'],
+        evidence: '高校招聘公告的学历门槛'
+      },
+      {
+        id: 'm3',
+        answerId: 'b2',
+        text: '读博四年以上的机会成本、延毕风险与年龄门槛叠加后，经济期望值为负。',
+        type: 'fact',
+        premiseTags: ['期望值计算', '风险厌恶'],
+        evidence: '收入折现与淘汰率估算'
+      },
+      {
+        id: 'm4',
+        answerId: 'b2',
+        text: '只有在导师靠谱、方向有产业出口、本人不排斥科研三个条件同时满足时，读博才划算。',
+        type: 'value',
+        premiseTags: ['期望值计算', '条件化决策'],
+        evidence: '条件性建议'
+      },
+      {
+        id: 'm5',
+        answerId: 'b3',
+        text: '理工科与人文社科的博士出口结构完全不同，因此「读博值不值」作为统一问题不成立。',
+        type: 'fact',
+        premiseTags: ['学科差异', '层次区分'],
+        evidence: '各学科就业去向统计'
+      },
+      {
+        id: 'm6',
+        answerId: 'b4',
+        text: '读博是生活方式的选择，不应以期望值衡量。',
+        type: 'value',
+        premiseTags: ['人生目标优先', '非功利'],
+        evidence: '规范性判断'
+      },
+      {
+        id: 'm7',
+        answerId: 'b5',
+        text: '公开劝退者的样本存在系统性偏差：读完且受益者更倾向于劝退，真正后悔者沉默。',
+        type: 'causal',
+        premiseTags: ['幸存者偏差', '发声偏差'],
+        evidence: '无数据，属观察性推断'
+      }
+    ],
+    issues: [
+      {
+        id: 'n1',
+        title: '读博的经济回报是否为正？',
+        fault: 'fact',
+        sideA: { label: '为正能力溢价）', claimIds: ['m1'] },
+        sideB: { label: '为负（期望值）', claimIds: ['m3'] },
+        faultReason:
+          '两方算的是不同的东西：A 方算「能力溢价」，B 方算「四年现金流 + 淘汰风险」。前者是长期存量，后者是短期流量，折现率一换，结论就翻转。',
+        resolveBy:
+          '需要的数据：控制本科背景与学科后，读博组与直接就业组 10-15 年的收入中位数与失业率对比。现有公开数据中，理工科该值为正、人文社科接近零。',
+        strengthA: 0.58,
+        strengthB: 0.71
+      },
+      {
+        id: 'n2',
+        title: '读博决策应该按期望值计算，还是按人生目标决定？',
+        fault: 'value',
+        sideA: { label: '按期望值', claimIds: ['m4'] },
+        sideB: { label: '按人生目标', claimIds: ['m6'] },
+        faultReason:
+          '这是纯粹的价值观分歧：一方认为重大决策应当可量化、可比较、可后悔；另一方认为有些选择的收益不可通约，一旦量化就已经错了。没有证据能裁决「该不该量化」。',
+        resolveBy: '不可由证据解决。这是你认为「人生该不该被计算」的投票。',
+        strengthA: 0.62,
+        strengthB: 0.62
+      },
+      {
+        id: 'n3',
+        title: '「读博值不值」这个问法本身成立吗？',
+        fault: 'fact',
+        sideA: { label: '不成立，必须分学科', claimIds: ['m5'] },
+        sideB: { label: '成立，可以统一评估', claimIds: ['m3'] },
+        faultReason:
+          '争的是分析层级：A 方主张学科是第一分层变量，B 方主张经济变量跨学科同构。这可以用数据裁决——看学科内方差是否大于学科间方差。',
+        resolveBy:
+          '需要的数据：读博收益的学科内方差 vs 学科间方差。若学科间方差显著更大，A 方胜。',
+        strengthA: 0.68,
+        strengthB: 0.5
+      },
+      {
+        id: 'n4',
+        title: '网上的劝退经验可信吗？',
+        fault: 'fact',
+        sideA: { label: '存在发声偏差', claimIds: ['m7'] },
+        sideB: { label: '劝退者是亲历者，可信', claimIds: ['m3'] },
+        faultReason:
+          '双方都承认「亲历者更有发言权」，分歧在于样本是否代表总体。这是一个纯粹的抽样方法论问题。',
+        resolveBy:
+          '需要的数据：博士毕业生的后悔率调查（匿名、全样本），与公开劝退言论的分布对比。',
+        strengthA: 0.45,
+        strengthB: 0.4
+      }
+    ],
+    consensus: [
+      { text: '导师质量对读博体验的影响，大于方向本身。— 五条回答无人否认，但只有 B 把它写进条件。', answerIds: ['b1', 'b2', 'b3', 'b4', 'b5'] },
+      { text: '读博不是获取高收入的路径。— 连主张「值得」的一方也没有用收入来论证。', answerIds: ['b1', 'b4'] },
+      { text: '高校教职市场正在收缩。', answerIds: ['b2', 'b3'] }
+    ],
+    isolated: [
+      {
+        claimId: 'm7',
+        note: '「劝退者存在发声偏差」只有一人提出，无人反驳也无人支持。它是一个可检验的假设，但在本问题下没有被检验。'
+      }
+    ],
+    silentMajority: []
+  },
+
+  {
+    id: 'ai-dev',
+    title: 'AI 会取代程序员吗？',
+    source: '示例数据（依据公开讨论重构，非知乎原文引用）',
+    stats: { answers: 1264, followers: 38902 },
+    answers: [
+      {
+        id: 'c1',
+        author: '匿名用户 L',
+        votes: 20118,
+        excerpt:
+          '不会取代，会改变分工。判断这类问题的标准是「需求是否随成本下降而扩张」。软件需求几乎没有上限——成本降一半，要做的东西就多一倍，历史上编译器、框架、云服务每次都这样。这叫杰文斯悖论。'
+      },
+      {
+        id: 'c2',
+        author: '匿名用户 M',
+        votes: 14302,
+        excerpt:
+          '别拿历史类比安慰自己。这次被吞噬的是金字塔的底座：CRUD、胶水代码、样板测试，这些恰好是初级工程师练手和就业的入口。底座没了，中间的也撑不住——因为没有地方长出高级工程师了。'
+      },
+      {
+        id: 'c3',
+        author: '匿名用户 N',
+        votes: 8094,
+        excerpt:
+          '取决于你怎么定义「程序员」。写代码这件事一定贬值，和打字一样；但定义问题、拆解需求、为结果负责，这些在升值。职业不会消失，但它的重心会从「实现」移到「判断」。'
+      },
+      {
+        id: 'c4',
+        author: '匿名用户 O',
+        votes: 5211,
+        excerpt:
+          '类比 ATM：ATM 普及后柜员数量并没有立刻下降，但柜员的工作内容从点钞变成了营销与复杂业务。技术替代的是任务，不是岗位。岗位是被重新组装出来的。',
+        type: 'analogy'
+      },
+      {
+        id: 'c5',
+        author: '匿名用户 P',
+        votes: 2140,
+        excerpt:
+          '所有讨论都绕开了一个点：责任。线上事故要有人签字、要有人被开除。AI 不能承担责任，所以系统里必须留一个人类的位置——不是因为 AI 不够聪明，是因为组织需要有人负责。'
+      }
+    ],
+    claims: [
+      {
+        id: 'p1',
+        answerId: 'c1',
+        text: '软件需求随成本下降而扩张，因此单位产出提升不会导致岗位总量下降。',
+        type: 'prediction',
+        premiseTags: ['杰文斯悖论', '需求弹性'],
+        evidence: '编译器、框架、云服务的历史类比'
+      },
+      {
+        id: 'p2',
+        answerId: 'c2',
+        text: 'AI 主要吞噬初级岗位，而初级岗位是高级工程师的成长入口，因此中层也会被压缩。',
+        type: 'prediction',
+        premiseTags: ['金字塔结构', '技能阶梯'],
+        evidence: '岗位结构推断，无实测数据'
+      },
+      {
+        id: 'p3',
+        answerId: 'c3',
+        text: '写代码会贬值，定义问题与判断会升值，职业重心将从实现转向判断。',
+        type: 'prediction',
+        premiseTags: ['技能分层', '任务替代'],
+        evidence: '任务颗粒度分析'
+      },
+      {
+        id: 'p4',
+        answerId: 'c4',
+        text: '技术替代的是任务而非岗位，岗位会被重新组装。',
+        type: 'fact',
+        premiseTags: ['任务替代', '历史类比'],
+        evidence: 'ATM 与银行柜员的历史数据'
+      },
+      {
+        id: 'p5',
+        answerId: 'c5',
+        text: '责任归属是人类不可替代的结构性位置，与 AI 能力高低无关。',
+        type: 'prediction',
+        premiseTags: ['责任归属', '组织约束'],
+        evidence: '组织问责机制'
+      }
+    ],
+    issues: [
+      {
+        id: 'q1',
+        title: 'AI 会让程序员岗位总量减少吗？',
+        fault: 'prediction',
+        sideA: { label: '不会，需求扩张', claimIds: ['p1', 'p4'] },
+        sideB: { label: '会，底座被吞噬', claimIds: ['p2'] },
+        faultReason:
+          '双方对「需求弹性」的假设相反：一方认为软件需求近乎无限，一方认为需求增长被购买力约束。这是对未来的两个不同模型，当下都无法证伪。',
+        resolveBy:
+          '观察信号：若三年内软件行业总营收增速持平而从业人数下降，则 B 方胜；若营收与人数同步上升，则 A 方胜。可查公开的行业就业统计。',
+        strengthA: 0.55,
+        strengthB: 0.6
+      },
+      {
+        id: 'q2',
+        title: '被替代的主要是初级岗位，还是全层级？',
+        fault: 'prediction',
+        sideA: { label: '主要是初级', claimIds: ['p2'] },
+        sideB: { label: '重心平移，非层级替代', claimIds: ['p3'] },
+        faultReason:
+          '分歧在于「技能阶梯是否可绕过」。A 方认为没有初级岗位就没有培养通道；B 方认为判断力可以在更高抽象层直接习得。这是一个关于学习机制的经验假设。',
+        resolveBy:
+          '观察信号：初级岗位招聘量占比的变化曲线，与高级岗位平均年龄的变化。',
+        strengthA: 0.6,
+        strengthB: 0.5
+      },
+      {
+        id: 'q3',
+        title: '「程序员」这个职业会被重新定义吗？',
+        fault: 'fact',
+        sideA: { label: '会，重心转向判断', claimIds: ['p3'] },
+        sideB: { label: '不会，只是任务变化', claimIds: ['p4'] },
+        faultReason:
+          '这其实是定义分歧：如果把「职业」定义为任务集合，那它一直在变；如果定义为岗位名称与社会身份，那它没变。两方用的是两个定义。',
+        resolveBy:
+          '可由定义澄清解决，而非数据解决。双方需先就「职业」的操作性定义达成一致。',
+        strengthA: 0.58,
+        strengthB: 0.58
+      },
+      {
+        id: 'q4',
+        title: '「承担责任」是不是人类不可替代的护城河？',
+        fault: 'prediction',
+        sideA: { label: '是，结构性不可替代', claimIds: ['p5'] },
+        sideB: { label: '不是，可被制度性替代', claimIds: ['p1'] },
+        faultReason:
+          '这一条几乎是孤证级别的洞见：只有一位答主提出，其他人都在讨论能力而非责任。双方甚至没有真正交锋——这是本问题下最值得展开却没被展开的分歧。',
+        resolveBy:
+          '观察信号：出现「AI 系统责任人」这一新岗位的立法或保险产品时，说明责任被制度化了，A 方被削弱。',
+        strengthA: 0.7,
+        strengthB: 0.35
+      }
+    ],
+    consensus: [
+      { text: '写代码这件事本身会大幅贬值。— 连最乐观的一方也不否认。', answerIds: ['c1', 'c2', 'c3', 'c4'] },
+      { text: 'AI 的能力边界在「判断」与「责任」附近，而非「生成」附近。— 四条回答从不同角度指向同一点。', answerIds: ['c1', 'c3', 'c5'] },
+      { text: '这次的替代速度比以往任何一次工具革命都快。', answerIds: ['c2', 'c3'] }
+    ],
+    isolated: [
+      {
+        claimId: 'p5',
+        note: '「责任归属」这条论证只有一人提出（2.1k 赞，远低于其他回答），且无人正面回应。它是本问题下最可能的真洞见——因为它绕开了「AI 够不够聪明」这个所有人都在争的伪命题。'
+      }
+    ],
+    silentMajority: [
+      {
+        answerId: 'c4',
+        note: 'ATM 类比被反复引用，但它只证明了「上一代技术没有消灭岗位」，不能直接推出「这一代也不会」——技术替代的速度和广度不同。它提供的是历史参照，不是论证。'
+      }
+    ]
+  },
+  {
+    id: 'gba',
+    title: '跨境电商还要不要自建独立站，还是全押平台？',
+    source: '示例数据（依据公开讨论重构，非知乎原文引用）',
+    stats: { answers: 460, followers: 9812 },
+    answers: [
+      {
+        id: 'g1',
+        author: '匿名用户 G',
+        votes: 6412,
+        excerpt:
+          '先把账算清楚。平台的自然流量正在变贵，但独立站的获客成本现在普遍是平台的一点五倍以上。平台佣金加广告通常吃掉售价的 25% 到 35%，独立站看起来省了佣金，可是你要自己买流量、自己养支付和物流、自己处理退货和合规——这些固定成本中小卖家摊不薄。所以我不同意「平台是租来的地」这种说法：对小卖家来说，能租到地先活下来才是第一位的。'
+      },
+      {
+        id: 'g2',
+        author: '匿名用户 H',
+        votes: 5327,
+        excerpt:
+          '在平台上做生意，本质上是把定价权交给了别人。佣金和广告费这五年涨了多少，做过的人都清楚。独立站的价值不在于省佣金，而在于你终于拥有用户邮箱、拥有复购、拥有定价权。当然它贵、它慢，但这是资产，不是开销。三年之内你会看到这个差距被平台自己拉大。'
+      },
+      {
+        id: 'g3',
+        author: '匿名用户 I',
+        votes: 2188,
+        excerpt:
+          '两边吵的人其实在说不同的事。独立站不是渠道选项，它是一套能力的名字：用户资产、复购、品牌溢价。如果你只是想多一个出货口，那确实不值得做；如果你想攒资产，那平台永远给不了你。所以这不是二选一，是先做哪个。我的做法是平台养现金流，独立站养资产，用平台的利润去喂独立站的亏损期。'
+      },
+      {
+        id: 'g4',
+        author: '匿名用户 J',
+        votes: 1874,
+        excerpt:
+          '我在深圳做过六年跨境服务商，说句得罪人的：真正决定你能不能活下来的，是供应链反应速度和选品，不是渠道形态。见过太多卖家把独立站做成一个昂贵的摆设——站建起来了，流量买不来，货还是那批货，用户体验没有任何区别。渠道是放大器，不是发动机。'
+      },
+      {
+        id: 'g5',
+        author: '匿名用户 K',
+        votes: 964,
+        excerpt:
+          '2015 年前后进场的卖家现在讲「平台红利」讲得头头是道，但那时候竞争少、流量便宜、合规宽松，成功里有多少是渠道选择，有多少是时间窗口？如果让他们今天从零开始，同样的选择未必有效。所以别拿早期成功者的经验当方法论。'
+      }
+    ],
+    claims: [
+      {
+        id: 'g1',
+        answerId: 'g1',
+        text: '平台佣金加广告通常占售价的 25%–35%，而独立站获客成本约为平台的一点五倍以上。',
+        type: 'fact',
+        evidence: '卖家后台费用与广告投放数据',
+        premiseTags: ['经济决定论', '期望值计算']
+      },
+      {
+        id: 'g2',
+        answerId: 'g1',
+        text: '独立站要自建支付、物流、退货与合规，固定成本中小卖家摊不薄。',
+        type: 'causal',
+        evidence: '固定成本摊薄逻辑',
+        premiseTags: ['经济决定论', '风险厌恶']
+      },
+      {
+        id: 'g3',
+        answerId: 'g1',
+        text: '未来两年平台仍会是八成以上卖家的主要成交渠道。',
+        type: 'prediction',
+        evidence: '无反例检验，属未验证推断',
+        premiseTags: ['需求饱和', '风险厌恶']
+      },
+      {
+        id: 'g4',
+        answerId: 'g2',
+        text: '在平台上经营等于把定价权交给平台，独立站的核心价值是拿回定价权与用户资产。',
+        type: 'value',
+        evidence: '规范性判断，不可由数据裁决',
+        premiseTags: ['非功利', '个人主义']
+      },
+      {
+        id: 'g5',
+        answerId: 'g2',
+        text: '平台佣金与广告费在过去五年持续上升，且没有停止的迹象。',
+        type: 'fact',
+        evidence: '费率与 CPC 历史曲线',
+        premiseTags: ['经济决定论', '历史类比']
+      },
+      {
+        id: 'g6',
+        answerId: 'g2',
+        text: '平台流量成本会继续上升，独立站的相对优势将在三年内扩大。',
+        type: 'prediction',
+        evidence: '趋势外推，含平台策略假设',
+        premiseTags: ['杰文斯悖论', '个人主义']
+      },
+      {
+        id: 'g7',
+        answerId: 'g3',
+        text: '「独立站」不是渠道选项，而是用户资产、复购能力与品牌溢价这套能力的名字。',
+        type: 'definition',
+        evidence: '概念界定',
+        premiseTags: ['层次区分', '个人主义']
+      },
+      {
+        id: 'g8',
+        answerId: 'g3',
+        text: '中小卖家该做的是「平台养现金流、独立站养资产」，而不是在两者之间二选一。',
+        type: 'value',
+        evidence: '策略性主张，取决于风险偏好',
+        premiseTags: ['层次区分', '非功利']
+      },
+      {
+        id: 'g9',
+        answerId: 'g4',
+        text: '决定跨境卖家能否活下来的是供应链反应速度与选品，而不是渠道形态。',
+        type: 'causal',
+        evidence: '服务商一线观察',
+        premiseTags: ['单一归因']
+      },
+      {
+        id: 'g10',
+        answerId: 'g5',
+        text: '早期平台红利期进入的卖家，其成功更多来自时间窗口而非渠道选择。',
+        type: 'fact',
+        evidence: '幸存者偏差的反向检验',
+        premiseTags: ['幸存者偏差', '代际经验']
+      }
+    ],
+    issues: [
+      {
+        id: 'i1',
+        title: '独立站的获客成本真的比平台更高吗？',
+        fault: 'fact',
+        sideA: { label: '高，且中小卖家摊不薄', claimIds: ['g1', 'g2'] },
+        sideB: { label: '高是暂时的，长期更便宜', claimIds: ['g5', 'g6'] },
+        faultReason:
+          '双方比的是不同的时间尺度：A 方算的是当期获客成本，B 方算的是五年期的成本曲线。同一组数字，取哪个窗口结论就相反。',
+        resolveBy: '同一批卖家 3 年期的 CAC 与 LTV 对照数据，且要区分品类与客单价。',
+        strengthA: 0.72,
+        strengthB: 0.58
+      },
+      {
+        id: 'i2',
+        title: '渠道选择是经营效率问题，还是资产归属问题？',
+        fault: 'value',
+        sideA: { label: '资产归属：定价权必须自己拿', claimIds: ['g4', 'g7'] },
+        sideB: { label: '经营效率：能活下来最重要', claimIds: ['g1', 'g9'] },
+        faultReason:
+          '这是价值排序之争：一方把「拥有」排在「效率」前面，另一方相反。再多数据也裁决不了「你更看重什么」。',
+        resolveBy: '无法由证据裁决，只能由卖家自己的目标函数决定（是攒资产，还是先活下来）。',
+        strengthA: 0.5,
+        strengthB: 0.66
+      },
+      {
+        id: 'i3',
+        title: '三年后独立站会占到跨境卖家成交的一半吗？',
+        fault: 'prediction',
+        sideA: { label: '会，差距会被平台自己拉大', claimIds: ['g6', 'g8'] },
+        sideB: { label: '不会，平台仍是主渠道', claimIds: ['g3'] },
+        faultReason:
+          '双方对平台策略的假设相反：A 方假设平台会继续提价挤出卖家，B 方假设平台会自我约束以保住供给。这是对未来的假设之争，现在无法证伪。',
+        resolveBy: '观察信号：平台费率是否连续两年上调、独立站 SaaS 的续费率是否持续高于 80%。',
+        strengthA: 0.45,
+        strengthB: 0.62
+      },
+      {
+        id: 'i4',
+        title: '把不建独立站归因于成本，是不是一种偷懒的解释？',
+        fault: 'fact',
+        sideA: { label: '是，成本只是借口', claimIds: ['g7', 'g10'] },
+        sideB: { label: '否，成本就是硬约束', claimIds: ['g2', 'g9'] },
+        faultReason:
+          'A 方认为渠道选择的真正门槛是能力与认知，成本只是拿来解释不作为的挡箭牌；B 方认为成本是可量化的硬墙。双方对「解释」这个词的要求不同。',
+        resolveBy: '对照实验：给同等资金的两组卖家做独立站，看存活率差异是否来自能力而非资金。',
+        strengthA: 0.4,
+        strengthB: 0.7
+      }
+    ],
+    consensus: [
+      { text: '平台的流量成本这几年一直在涨，没有人否认。— 连平台派也不反驳这一点。', answerIds: ['g1', 'g2', 'g3'] },
+      { text: '独立站不是「建个站」就完了，它需要一套运营能力。— 双方都同意门槛在能力侧。', answerIds: ['g2', 'g3', 'g4'] },
+      { text: '中小卖家的现金流是第一约束。— 所有立场都承认这一点，只是结论不同。', answerIds: ['g1', 'g3', 'g4'] }
+    ],
+    isolated: [
+      {
+        claimId: 'g10',
+        note: '「早期成功来自时间窗口」这条只有一位答主提出（964 赞，全场最低），且无人正面回应。它是这个讨论里最有可能改变结论的一条——如果它成立，那么所有「我们当年就是这么做的」的经验都不构成论据。'
+      }
+    ],
+    silentMajority: [
+      {
+        answerId: 'g4',
+        note: '「渠道是放大器，不是发动机」这句被很多人点赞，但它其实绕开了争论：如果渠道真的只是放大器，那渠道之争就不值得吵——这恰恰否定了在场所有人的前提。它提供的是一个降维的说法，不是论证。'
+      }
+    ]
+  }
+];
+
+function getDataset(id) {
+  return DATASETS.find((d) => d.id === id) || DATASETS[0];
+}
+return { DATASETS, getDataset };
+})();
+
+/* ==== module: infer (src/engine/infer.js) ==== */
+__M['infer'] = (function () {
+/**
+ * 信念推演
+ *
+ * 输入：结构化的断层面 + 用户在某个争点上选择的立场
+ * 输出：三层结论
+ *   1. 你默认接受了哪些前提（你自己没意识到的）
+ *   2. 基于这些前提，你在其他争点上逻辑上应该站哪边（可能和你的直觉相反）
+ *   3. 你必须付出的代价：哪些论据与你的立场直接冲突
+ *
+ * 算法是纯符号的：前提标签重叠 = 信念一致，互斥标签 = 信念冲突。
+ * 这样每一步都能在界面上解释给用户看，而不是模型黑箱。
+ */
+
+// 互斥的前提标签对。给出标签对，两侧同时成立会自相矛盾。
+const OPPOSED = [
+  ['经济决定论', '观念独立变量'],
+  ['期望值计算', '非功利'],
+  ['个人主义', '集体优先'],
+  ['任务替代', '岗位替代'],
+  ['杰文斯悖论', '需求饱和'],
+  ['制度决定论', '文化决定论'],
+  ['学术价值', '市场价值'],
+  ['风险厌恶', '风险中性'],
+  ['层次区分', '单一归因']
+];
+
+function isOpposed(a, b) {
+  return OPPOSED.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+}
+
+/** 收集某个争点某一侧的全部主张 */
+function sideClaims(insight, issue, side) {
+  const ids = side === 'A' ? issue.sideA.claimIds : issue.sideB.claimIds;
+  return ids.map((id) => insight.claims.find((c) => c.id === id)).filter(Boolean);
+}
+
+/** 一个争点下某侧的前提标签集合（去重） */
+function premisesOf(insight, issue, side) {
+  const set = new Set();
+  sideClaims(insight, issue, side).forEach((c) => (c.premiseTags || []).forEach((t) => set.add(t)));
+  return [...set];
+}
+
+/**
+ * 主函数
+ * @param {object} insight 结构化断层数据
+ * @param {string} issueId 用户表态的争点
+ * @param {'A'|'B'} side 用户选择的立场
+ */
+function inferBelief(insight, issueId, side) {
+  const issue = insight.issues.find((i) => i.id === issueId);
+  if (!issue) return null;
+
+  const myPremises = premisesOf(insight, issue, side);
+  const otherSide = side === 'A' ? 'B' : 'A';
+
+  // 1) 其他争点上，哪些侧与我的前提重叠、哪些冲突
+  const projections = [];
+  for (const other of insight.issues) {
+    if (other.id === issue.id) continue;
+
+    const scoreA = overlap(myPremises, premisesOf(insight, other, 'A'));
+    const scoreB = overlap(myPremises, premisesOf(insight, other, 'B'));
+    if (scoreA === 0 && scoreB === 0) continue;
+
+    const lean = scoreA > scoreB ? 'A' : scoreB > scoreA ? 'B' : null;
+    if (!lean) continue;
+
+    const leanLabel = lean === 'A' ? other.sideA.label : other.sideB.label;
+    projections.push({
+      issueId: other.id,
+      issueTitle: other.title,
+      lean,
+      leanLabel,
+      confidence: Math.abs(scoreA - scoreB) / Math.max(scoreA, scoreB, 1),
+      shared: sharedTags(myPremises, premisesOf(insight, other, lean)),
+      // 若这个预测与用户"直觉"不同，界面会标成"反直觉"
+      counterIntuitive: false
+    });
+  }
+
+  projections.sort((a, b) => b.confidence - a.confidence);
+
+  // 2) 代价：与我的前提互斥的论据
+  const costs = [];
+  for (const claim of insight.claims) {
+    const tags = claim.premiseTags || [];
+    const clash = tags.filter((t) => myPremises.some((p) => isOpposed(p, t)));
+    if (clash.length) {
+      costs.push({
+        claimId: claim.id,
+        text: claim.text,
+        clash: [...new Set(clash)],
+        answeredBy: claim.answerId,
+        // 这条论据所支持的对立立场
+        againstIssue: insight.issues.find((i) =>
+          [...i.sideA.claimIds, ...i.sideB.claimIds].includes(claim.id)
+        )?.id
+      });
+    }
+  }
+
+  // 3) 你必须接受的隐含前提：对方阵营中与你共享的标——说明你其实也同意了对方的一部分
+  const concessionTags = sharedTags(myPremises, premisesOf(insight, issue, otherSide));
+
+  return {
+    issueId: issue.id,
+    issueTitle: issue.title,
+    side,
+    sideLabel: side === 'A' ? issue.sideA.label : issue.sideB.label,
+    myPremises,
+    projections,
+    costs,
+    concessionTags,
+    // 一句话结论
+    headline: buildHeadline(projections, costs, issue, side)
+  };
+}
+
+function overlap(a, b) {
+  return a.filter((x) => b.includes(x)).length;
+}
+
+function sharedTags(a, b) {
+  return a.filter((x) => b.includes(x));
+}
+
+function buildHeadline(projections, costs, issue, side) {
+  const top = projections[0];
+  if (issue.fault === 'value') {
+    return `你选的是一个价值立场，不是事实判断——它不可能被证据推翻，但会让你在其他 ${projections.length} 个争点上被绑定。`;
+  }
+  if (!top) return '你的立场在这个问题上没有牵连到其他争点，说明它是局部判断，而不是一套世界观。';
+  if (costs.length === 0) {
+    return `你的立场要求你在「${top.issueTitle}」上站「${top.leanLabel}」，且没有明显代价——这是一套自洽的信念。`;
+  }
+  return `你的立场要求你在「${top.issueTitle}」上站「${top.leanLabel}」，代价是你要么接受「${costs[0].text.slice(0, 28)}…」这条相反论据，要么放弃自己的前提。`;
+}
+return { premisesOf, inferBelief };
+})();
+
+/* ==== module: extract (src/engine/extract.js) ==== */
+__M['extract'] = (function () {
+/**
+ * 抽取引擎
+ *
+ * 两条路径，产物结构完全一致，界面不需要知道走的是哪条：
+ *   A. LLM 路径   —— 本地 Ollama / 任意 OpenAI 兼容端点，分四个阶段调用
+ *   B. 规则路径   —— 无模型时的兜底，靠信号词 + 关键词重合度聚类
+ *
+ * 设计原则：每一步都能单独失败并降级，绝不让整个分析返回空。
+ */
+
+const { chatJSON } = __M['llm'];
+
+const PREMISE_VOCAB = [
+  '经济决定论', '观念独立变量', '理性人假设', '个人主义', '集体优先',
+  '制度决定论', '跨国比较', '期望值计算', '非功利', '风险厌恶',
+  '学科差异', '任务替代', '历史类比', '责任归属', '杰文斯悖论',
+  '层次区分', '性别视角', '代际经验', '幸存者偏差', '需求饱和'
+];
+
+const SYS_CLAIM = `你是论证结构分析器。把一条回答拆成 1-4 条原子主张。
+只输出 JSON：{"claims":[{"text":"主张（一句话，可独立成立）","type":"fact|value|prediction|causal|definition","premiseTags":["从给定词表里选，最多2个"],"evidence":"该主张依赖的证据类型，10字以内"}]}
+规则：text 不超过 60 字；不要把两个意思合并；value=价值判断不可证伪，fact=关于世界的事实描述，prediction=关于未来的断言，causal=因果断言，definition=定义之争。`;
+
+const SYS_ISSUE = `你是论辩结构分析器。给定若干条主张（带编号），找出其中真正在互相争论的 2-4 个「争点」。
+只输出 JSON：{"issues":[{"title":"争点问句","fault":"fact|value|prediction","sideA":{"label":"立场名","claimIds":["k1"]},"sideB":{"label":"立场名","claimIds":["k2"]},"faultReason":"双方分歧的真正来源，一句话，指出是定义不同/证据层级不同/价值观不同/对未来的假设不同","resolveBy":"需要什么证据或观察信号才能判定","strengthA":0.5,"strengthB":0.5}]}
+规则：一个争点必须有两侧；claimIds 只能引用给定编号；fault=fact 表示原则上可被证据解决，value 表示是价值排序不可解决，prediction 表示不可证伪只能等时间；strength 是论证强度 0-1。`;
+
+const SYS_CONSENSUS = `你是论辩结构分析器。给定若干条主张和回答编号，找出各方都默认、但几乎没人明说的前提共识。
+只输出 JSON：{"consensus":[{"text":"共识陈述，一句话","answerIds":["a1","a2"]}]}
+要求：2-3 条；必须是「所有主要阵营都不反对」的，不能是有争议的。`;
+
+/* ---------------- 工具 ---------------- */
+
+const STOP = new Set(
+  '的 了 是 在 我 你 他 她 它 们 这 那 就 都 也 而 与 和 或 但 不 没 有 会 要 说 一个 什么 怎么 为什么 因为 所以 如果 可以 没有 就是 其实 已经 还是 只是 但是 而且 不是 这个 那个 我们 他们 自己 一样 这样 那样 时候 问题 事情'.split(' ')
+);
+
+function sentences(text) {
+  return String(text || '')
+    .split(/[。！？!?；;\n]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 8);
+}
+
+function bigrams(text) {
+  const clean = String(text || '').replace(/[^\u4e00-\u9fa5A-Za-z0-9]/g, '');
+  const out = [];
+  for (let i = 0; i < clean.length - 1; i++) {
+    const g = clean.slice(i, i + 2);
+    if (!STOP.has(g)) out.push(g);
+  }
+  return out;
+}
+
+function classifyType(s) {
+  if (/应该|值得|不如|更好|更重要|可悲|荒谬|必须/.test(s)) return 'value';
+  if (/将会|未来|迟早|最终|趋势|三年|十年/.test(s)) return 'prediction';
+  if (/导致|因为|造成|使得|由于/.test(s)) return 'causal';
+  if (/所谓|定义|本质上是|指的是/.test(s)) return 'definition';
+  return 'fact';
+}
+
+function guessPremises(s) {
+  const hits = [];
+  const rules = [
+    [/成本|收入|钱|房价|价格|经济|工资|预算/, '经济决定论'],
+    [/观念|想不想|意愿|思想|价值观变了|祛魅/, '观念独立变量'],
+    [/理性|算账|划算|期望|收益/, '理性人假设'],
+    [/个人|自由|选择权|自己/, '个人主义'],
+    [/制度|政策|法律|规则|补贴/, '制度决定论'],
+    [/日本|美国|国外|跨国|韩国/, '跨国比较'],
+    [/学科|专业|领域不同/, '学科差异'],
+    [/责任|签字|负责|问责/, '责任归属'],
+    [/历史|以前|过去|类比|当年/, '历史类比'],
+    [/偏差|样本|幸存/, '幸存者偏差'],
+    [/需求|市场|扩张/, '杰文斯悖论'],
+    [/层次|两个问题|混为一谈/, '层次区分']
+  ];
+  for (const [re, tag] of rules) if (re.test(s)) hits.push(tag);
+  return hits.slice(0, 2);
+}
+
+/* ---------------- 规则路径 ---------------- */
+
+/** 单字 + 双字混合主题 token：中文短句里纯 bigram 的重合度太低，单字能救回召回 */
+function topicTokens(text) {
+  const clean = String(text || '').replace(/[^\u4e00-\u9fa5A-Za-z0-9]/g, '');
+  const out = new Set();
+  for (const ch of clean) if (!STOP.has(ch)) out.add(ch);
+  for (const g of bigrams(text)) out.add(g);
+  return out;
+}
+
+function jaccard(a, b) {
+  if (!a.size || !b.size) return 0;
+  let inter = 0;
+  for (const t of a) if (b.has(t)) inter++;
+  const union = a.size + b.size - inter;
+  return union ? inter / union : 0;
+}
+
+/** 由一组主张索引构造争点 */
+function buildIssue(claims, idxA, idxB, n) {
+  const cs = [...idxA, ...idxB].map((i) => claims[i]);
+  const types = cs.map((c) => c.type);
+  const fault = types.includes('value') ? 'value' : types.includes('prediction') ? 'prediction' : 'fact';
+  const a = idxA.map((i) => claims[i]);
+  const b = idxB.map((i) => claims[i]);
+  if (!a.length || !b.length) return null;
+
+  return {
+    id: `i${n + 1}`,
+    title: cs[0].text.replace(/[，。,.]$/, '') + '？',
+    fault,
+    sideA: { label: a[0].text.slice(0, 10), claimIds: a.map((c) => c.id) },
+    sideB: { label: b[0].text.slice(0, 10), claimIds: b.map((c) => c.id) },
+    faultReason:
+      fault === 'value'
+        ? '规则引擎检测到价值判断词（应该/值得/重要），这类分歧不可由证据解决。'
+        : fault === 'prediction'
+          ? '规则引擎检测到未来时态断言，双方都无法在当下提供证据。'
+          : '规则引擎按主题重合度把主张配对，未做语义级前提分析。',
+    resolveBy: fault === 'value' ? '不可由证据解决。' : '需要该主张依赖的具体数据；规则引擎无法判断需要哪种数据。',
+    strengthA: 0.5,
+    strengthB: 0.5,
+    degraded: true
+  };
+}
+
+function ruleAnalyze(answers) {
+  const claims = [];
+  const answerList = [];
+
+  answers.forEach((a, idx) => {
+    const aid = a.id || `a${idx + 1}`;
+    answerList.push({
+      id: aid,
+      author: a.author || `匿名用户 ${String.fromCharCode(65 + idx)}`,
+      votes: a.votes || 0,
+      excerpt: a.excerpt || a.text || ''
+    });
+
+    const src = a.excerpt || a.text || '';
+    sentences(src)
+      .slice(0, 4)
+      .forEach((s) => {
+        claims.push({
+          id: `k${claims.length + 1}`,
+          answerId: aid,
+          text: s.length > 60 ? s.slice(0, 58) + '…' : s,
+          type: classifyType(s),
+          premiseTags: guessPremises(s),
+          evidence: '规则抽取（未验证）'
+        });
+      });
+  });
+
+  // 用主题 token 重合度把主张聚成争点
+  const toks = claims.map((c) => topicTokens(c.text));
+  const used = new Set();
+  const issues = [];
+
+  for (let i = 0; i < claims.length; i++) {
+    if (used.has(i) || issues.length >= 4) continue;
+    const group = [i];
+    for (let j = i + 1; j < claims.length; j++) {
+      if (used.has(j)) continue;
+      if (jaccard(toks[i], toks[j]) > 0.1) group.push(j);
+      if (group.length >= 3) break;
+    }
+    if (group.length < 2) continue;
+    group.forEach((g) => used.add(g));
+
+    const idxA = group.filter((_, n) => n % 2 === 0);
+    const idxB = group.filter((_, n) => n % 2 === 1);
+    const built = buildIssue(claims, idxA, idxB, issues.length);
+    if (built) issues.push(built);
+  }
+
+  // 兜底：一条都聚不出来时，按「主张类型 + 前提标签」强制分侧，保证界面不会空
+  if (!issues.length && claims.length >= 2) {
+    const byType = new Map();
+    claims.forEach((c, i) => {
+      if (!byType.has(c.type)) byType.set(c.type, []);
+      byType.get(c.type).push(i);
+    });
+    const ordered = [...byType.entries()].sort((a, b) => b[1].length - a[1].length);
+
+    for (const [, idxs] of ordered) {
+      if (idxs.length < 2 || issues.length >= 2) continue;
+      const buckets = new Map();
+      idxs.forEach((i) => {
+        const tag = claims[i].premiseTags[0] || '—';
+        if (!buckets.has(tag)) buckets.set(tag, []);
+        buckets.get(tag).push(i);
+      });
+      let sides = [...buckets.values()].sort((a, b) => b.length - a.length);
+      if (sides.length < 2) {
+        const half = Math.ceil(idxs.length / 2);
+        sides = [idxs.slice(0, half), idxs.slice(half)];
+      }
+      const built = buildIssue(claims, sides[0], sides[1], issues.length);
+      if (built) issues.push(built);
+    }
+  }
+
+  // 共识：出现在 ≥ 半数回答里的高频概念
+  const freq = new Map();
+  claims.forEach((c) => bigrams(c.text).forEach((g) => freq.set(g, (freq.get(g) || 0) + 1)));
+  const topGrams = [...freq.entries()].filter(([, n]) => n >= 2).sort((x, y) => y[1] - x[1]).slice(0, 6);
+  const consensus = topGrams.slice(0, 2).map(([g]) => ({
+    text: `多数回答都涉及「${g}」，但没有人把它作为分歧点展开——可能是一个被共享的默认前提。`,
+    answerIds: []
+  }));
+
+  const referenced = new Set(issues.flatMap((i) => [...i.sideA.claimIds, ...i.sideB.claimIds]));
+  const isolated = claims
+    .filter((c) => !referenced.has(c.id))
+    .slice(0, 3)
+    .map((c) => ({ claimId: c.id, note: '该主张没有与任何其他主张形成对抗，可能被忽略，也可能是噪音。' }));
+
+  return {
+    answers: answerList,
+    claims,
+    issues,
+    consensus,
+    isolated,
+    silentMajority: [],
+    engine: 'rule',
+    degraded: true
+  };
+}
+
+/* ---------------- LLM 路径 ---------------- */
+
+async function llmClaims(answer, cfg, index) {
+  const out = await chatJSON({
+    cfg,
+    system: SYS_CLAIM,
+    user: `可用前提词表：${PREMISE_VOCAB.join('、')}\n\n回答编号：a${index + 1}\n回答正文：${answer.excerpt || answer.text}`
+  });
+  const list = Array.isArray(out.claims) ? out.claims : [];
+  return list.slice(0, 4).map((c) => ({
+    text: String(c.text || '').slice(0, 80),
+    type: ['fact', 'value', 'prediction', 'causal', 'definition'].includes(c.type) ? c.type : 'fact',
+    premiseTags: Array.isArray(c.premiseTags) ? c.premiseTags.slice(0, 2).map(String) : [],
+    evidence: String(c.evidence || '')
+  }));
+}
+
+async function llmIssues(claims, cfg) {
+  const listing = claims.map((c) => `${c.id}: ${c.text}`).join('\n');
+  const out = await chatJSON({
+    cfg,
+    system: SYS_ISSUE,
+    user: `全部主张：\n${listing}\n\n请找出其中真正互相争论的争点（2-4 个）。`
+  });
+  const valid = new Set(claims.map((c) => c.id));
+  const list = (Array.isArray(out.issues) ? out.issues : [])
+    .map((it, n) => {
+      const clean = (ids) => (Array.isArray(ids) ? ids.filter((x) => valid.has(x)) : []);
+      return {
+        id: `i${n + 1}`,
+        title: String(it.title || '').slice(0, 60),
+        fault: ['fact', 'value', 'prediction'].includes(it.fault) ? it.fault : 'fact',
+        sideA: { label: String(it.sideA?.label || '立场 A').slice(0, 16), claimIds: clean(it.sideA?.claimIds) },
+        sideB: { label: String(it.sideB?.label || '立场 B').slice(0, 16), claimIds: clean(it.sideB?.claimIds) },
+        faultReason: String(it.faultReason || ''),
+        resolveBy: String(it.resolveBy || ''),
+        strengthA: Number(it.strengthA) || 0.5,
+        strengthB: Number(it.strengthB) || 0.5
+      };
+    })
+    .filter((it) => it.sideA.claimIds.length > 0 && it.sideB.claimIds.length > 0);
+  return list;
+}
+
+async function llmConsensus(claims, answers, cfg) {
+  const listing = claims.map((c) => `${c.id}(${c.answerId}): ${c.text}`).join('\n');
+  const out = await chatJSON({
+    cfg,
+    system: SYS_CONSENSUS,
+    user: `回答编号：${answers.map((a) => a.id).join('、')}\n主张：\n${listing}`
+  });
+  return (Array.isArray(out.consensus) ? out.consensus : []).slice(0, 3).map((c) => ({
+    text: String(c.text || ''),
+    answerIds: Array.isArray(c.answerIds) ? c.answerIds : []
+  }));
+}
+
+/**
+ * 主入口
+ * @param {{answers:Array, cfg:object, useLLM:boolean, onStage:Function}} opts
+ */
+async function analyze({ answers, cfg, useLLM = true, onStage = () => {} }) {
+  const answerList = answers.map((a, i) => ({
+    id: a.id || `a${i + 1}`,
+    author: a.author || `匿名用户 ${String.fromCharCode(65 + i)}`,
+    votes: a.votes || 0,
+    excerpt: a.excerpt || a.text || ''
+  }));
+
+  if (!useLLM) {
+    onStage({ stage: 'rule', message: '未启用模型，使用规则引擎' });
+    return { ...ruleAnalyze(answerList), answers: answerList, engine: 'rule' };
+  }
+
+  try {
+    // 阶段 0：预热。本地模型第一次调用要把权重读进显存（实测冷启动可到 90s，
+    // 热启动只有 2.6s）。不预热的话第一条回答会白白吃掉整个超时预算。
+    onStage({ stage: 'warmup', message: '正在加载本地模型…', progress: 0.03 });
+    try {
+      await chatJSON({
+        cfg: { ...cfg, timeoutMs: Math.max(cfg.timeoutMs || 90000, 180000) },
+        system: '你是结构化抽取引擎，只输出 JSON。',
+        user: '输出 {"ok":true}',
+        temperature: 0
+      });
+    } catch (err) {
+      // 预热失败就直接判死：与其每条回答各等 90 秒，不如立刻告诉用户端点不通
+      throw new Error(`模型端点无响应（${err.message}）：请确认 Ollama 已启动、模型名正确`);
+    }
+
+    // 阶段 1：逐条抽取主张
+    const allClaims = [];
+    let firstErr = null;
+    for (let i = 0; i < answerList.length; i++) {
+      onStage({ stage: 'claims', message: `正在拆解第 ${i + 1}/${answerList.length} 条回答`, progress: 0.05 + ((i + 0.9) / answerList.length) * 0.5 });
+      let part = [];
+      try {
+        part = await llmClaims(answerList[i], cfg, i);
+      } catch (err) {
+        if (!firstErr) firstErr = err;
+        onStage({ stage: 'claims', message: `第 ${i + 1} 条回答抽取失败，跳过：${err.message}` });
+      }
+      part.forEach((c) => {
+        allClaims.push({ ...c, id: `k${allClaims.length + 1}`, answerId: answerList[i].id });
+      });
+    }
+    if (allClaims.length < 2) {
+      // 分清「模型调不通」和「文字本身没分歧」——前者要改环境，后者要改输入
+      throw new Error(
+        firstErr
+          ? `所有回答都抽取失败（首个错误：${firstErr.message}）`
+          : '主张数量不足，无法构建争点'
+      );
+    }
+
+    // 阶段 2：归并争点
+    onStage({ stage: 'issues', message: '正在归并争点…', progress: 0.6 });
+    let issues = [];
+    try {
+      issues = await llmIssues(allClaims, cfg);
+    } catch (err) {
+      onStage({ stage: 'issues', message: `争点归并失败，改用规则聚类：${err.message}` });
+    }
+    if (!issues.length) {
+      const fallback = ruleAnalyze(answerList);
+      issues = fallback.issues;
+    }
+
+    // 阶段 3：共识
+    onStage({ stage: 'consensus', message: '正在提取共识基线…', progress: 0.85 });
+    let consensus = [];
+    try {
+      consensus = await llmConsensus(allClaims, answerList, cfg);
+    } catch (err) {
+      onStage({ stage: 'consensus', message: `共识提取失败：${err.message}` });
+    }
+
+    // 阶段 4：孤证
+    const referenced = new Set(issues.flatMap((i) => [...i.sideA.claimIds, ...i.sideB.claimIds]));
+    const isolated = allClaims
+      .filter((c) => !referenced.has(c.id))
+      .slice(0, 3)
+      .map((c) => ({
+        claimId: c.id,
+        note: '该张没有与任何其他主张形成对抗——可能被忽略，也可能是噪音。'
+      }));
+
+    onStage({ stage: 'done', message: '完成', progress: 1 });
+    return { answers: answerList, claims: allClaims, issues, consensus, isolated, silentMajority: [], engine: 'llm' };
+  } catch (err) {
+    onStage({ stage: 'degraded', message: `模型路径失败，降级到规则引擎：${err.message}` });
+    return { ...ruleAnalyze(answerList), answers: answerList, engine: 'rule', degraded: true };
+  }
+}
+
+/**
+ * 把一段粘贴的文本切成多条回答。
+ * 支持：空行分隔 / "回答1" / "---" / "1." 编号
+ */
+function splitRawAnswers(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return [];
+  let parts = raw.split(/\n\s*\n|^\s*-{3,}\s*$/m).map((s) => s.trim()).filter(Boolean);
+  if (parts.length < 2) {
+    parts = raw.split(/\n(?=(?:回答|答案|A|a)\s*\d+[：:.、\s])/).map((s) => s.trim()).filter(Boolean);
+  }
+  if (parts.length < 2) {
+    parts = raw.split(/\n(?=\d+[.、]\s)/).map((s) => s.trim()).filter(Boolean);
+  }
+  if (parts.length < 2) return [{ id: 'a1', author: '导入内容', votes: 0, excerpt: raw }];
+  return parts.map((p, i) => ({
+    id: `a${i + 1}`,
+    author: `导入回答 ${i + 1}`,
+    votes: 0,
+    excerpt: p
+      .replace(/^(回答|答案)\s*\d+[：:.、\s]*/i, '')
+      .replace(/^\d+\s*[.、)]\s*/, '')
+      .trim()
+  }));
+}
+return { ruleAnalyze, analyze, splitRawAnswers };
+})();
+
+/* ==== module: app (src/app.js) ==== */
+__M['app'] = (function () {
+/**
+ * 歧见 · 界面层
+ * 三个视图：断层总图（岩层+裂缝）→ 单争点剖面 → 信念推演
+ */
+
+const { DATASETS, getDataset } = __M['datasets'];
+const { analyze, splitRawAnswers, ruleAnalyze } = __M['extract'];
+const { loadConfig, saveConfig, probe } = __M['llm'];
+const { inferBelief, premisesOf } = __M['infer'];
+const { PROVIDERS, getProvider, applyProvider, maskKey } = __M['providers'];
+
+const state = {
+  dataset: DATASETS[0],
+  insight: null,
+  issueId: null,
+  belief: null,
+  engine: 'demo',
+  llmOk: false,
+  busy: false
+};
+
+const $ = (id) => document.getElementById(id);
+
+/* ---------------- 伪随机：保证同一个争点每次画出的裂缝一样 ---------------- */
+
+function hashStr(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(a) {
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const FAULT_COLOR = { fact: '#4da3ff', value: '#ffa94d', prediction: '#b485ff' };
+const FAULT_LABEL = { fact: '事实断层', value: '价值断层', prediction: '预测断层' };
+const FAULT_CLASS = { fact: 'fact', value: 'value', prediction: 'pred' };
+const TYPE_LABEL = {
+  fact: '事实',
+  value: '价值',
+  prediction: '预测',
+  causal: '因果',
+  definition: '定义'
+};
+
+/* ---------------- 初始化 ---------------- */
+
+function init() {
+  const sel = $('datasetSelect');
+  DATASETS.forEach((d) => {
+    const opt = document.createElement('option');
+    opt.value = d.id;
+    opt.textContent = d.title;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', () => {
+    state.dataset = getDataset(sel.value);
+    loadDataset(state.dataset);
+  });
+
+  $('btnImport').addEventListener('click', () => openModal('importModal'));  $('btnSettings').addEventListener('click', openSettings);
+  document.querySelectorAll('[data-close]').forEach((b) =>
+    b.addEventListener('click', () => closeModal(b.closest('.modal')))
+  );
+  $('btnAnalyze').addEventListener('click', runImport);
+  $('btnSaveCfg').addEventListener('click', doSaveCfg);
+  $('btnProbe').addEventListener('click', doProbe);
+  $('stanceA').addEventListener('click', () => setStance('A'));
+  $('stanceB').addEventListener('click', () => setStance('B'));
+  $('clearStance').addEventListener('click', () => setStance(null));
+
+  // 知乎开放平台：话题 → 问题 → 真实回答摘要 → 填进输入框
+  const zh = $('btnZhihuTopic');
+  if (zh) zh.addEventListener('click', zhihuFindQuestions);
+  const zs = $('zhihuSecret');
+  if (zs) zs.value = safeStore('get', 'qijian.zhihu.secret') || '';
+
+  // 深链：?ds=marriage&issue=i2&side=A —— 便于演示录制与分享定位
+  const params = new URLSearchParams(location.search);
+  const wantDs = params.get('ds');
+  const picked = wantDs ? DATASETS.find((d) => d.id === wantDs) : null;
+  if (picked) {
+    state.dataset = picked;
+    sel.value = picked.id;
+  }
+
+  loadDataset(state.dataset);
+
+  const wantIssue = params.get('issue');
+  if (wantIssue && state.insight.issues.some((i) => i.id === wantIssue)) selectIssue(wantIssue);
+
+  const wantSide = params.get('side');
+  if (wantSide === 'A' || wantSide === 'B') setStance(wantSide);
+
+  checkEngine();
+}
+
+/* ---------------- 演示服务器 ----------------
+ * 如果这个部署配了服务端模型 Key（server.mjs 的 LLM_API_KEY），前端就直接用它：
+ * 评委不用装 Ollama、也不用自己填 Key。用户自己存过配置的话以用户的为准。
+ */
+let demoCfg = null;
+
+async function detectDemo() {
+  if (location.protocol === 'file:') return null;
+  let timer = null;
+  try {
+    // 用自己的计时器做超时，而不是拼一个 AbortSignal：
+    // 跨 realm 的 AbortSignal 传给 fetch 会直接抛 TypeError（jsdom、iframe、worker 都会踩到）
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error('health 探测超时')), 4000);
+    });
+    const r = await Promise.race([fetch(new URL('api/health', location.href)), timeout]);
+    if (!r.ok) return null;
+    const j = await r.json();
+    if (j && j.llm && j.llm.enabled) {
+      demoCfg = {
+        baseUrl: new URL('api/llm', location.href).href.replace(/\/+$/, ''),
+        apiKey: 'demo',
+        model: j.llm.model || 'demo'
+      };
+      return demoCfg;
+    }
+  } catch {
+    /* 没有就是没有，静默 */
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+  return null;
+}
+
+/* 实际生效的配置：用户存过配置就听用户的，否则用演示服务器，再否则用默认（本机 Ollama） */
+function activeConfig() {
+  const cfg = loadConfig();
+  if (!safeStore('get', 'qijian.llm.config') && demoCfg) {
+    return Object.assign({}, cfg, demoCfg);
+  }
+  return cfg;
+}
+
+/* 示例集：直接用内置结构，引擎标记为 demo */
+function loadDataset(ds) {
+  state.insight = {
+    answers: ds.answers,
+    claims: ds.claims,
+    issues: ds.issues,
+    consensus: ds.consensus,
+    isolated: ds.isolated,
+    silentMajority: ds.silentMajority,
+    engine: 'demo',
+    title: ds.title,
+    source: ds.source,
+    stats: ds.stats
+  };
+  state.issueId = ds.issues[0]?.id || null;
+  state.belief = null;
+  renderAll();
+}
+
+/* ---------------- 渲染 ---------------- */
+
+function renderAll() {
+  const ins = state.insight;
+  if (!ins) return;
+
+  $('questionTitle').textContent = ins.title || state.dataset.title || '未命名问题';
+  $('sourceNote').textContent =
+    ins.engine === 'demo'
+      ? '示例数据 · 依据公开讨论重构，非知乎原文引用'
+      : ins.engine === 'llm'
+        ? '本机模型抽取 · 内容未上传'
+        : '规则引擎抽取（降级模式）· 内容未上传';
+
+  renderChips();
+  renderOverview();
+  renderSplit();
+  renderEdges();
+  renderInference();
+}
+
+function renderChips() {
+  const ins = state.insight;
+  const chips = $('chips');
+  chips.innerHTML = '';
+  const add = (text, cls) => {
+    const el = document.createElement('span');
+    el.className = 'chip ' + (cls || '');
+    el.textContent = text;
+    chips.appendChild(el);
+  };
+  if (ins.answers?.length) add(`${ins.answers.length} 条回答`);
+  if (ins.claims?.length) add(`${ins.claims.length} 条主张`);
+  const byFault = { fact: 0, value: 0, prediction: 0 };
+  (ins.issues || []).forEach((i) => byFault[i.fault] !== undefined && byFault[i.fault]++);
+  if (byFault.fact) add(`${byFault.fact} 个事实断层`, 'fact');
+  if (byFault.value) add(`${byFault.value} 个价值断层`, 'value');
+  if (byFault.prediction) add(`${byFault.prediction} 个预测断层`, 'pred');
+  if (ins.consensus?.length) add(`${ins.consensus.length} 条共识基线`, 'consensus');
+}
+
+/* --- 总图：岩层 + 裂缝 --- */
+function renderOverview() {
+  const svg = $('overview');
+  const ns = 'http://www.w3.org/2000/svg';
+  svg.innerHTML = '';
+  const issues = state.insight.issues || [];
+  const W = 1200;
+  const top = 96;
+  const bandH = 46;
+
+  // 岩层背景
+  const defs = document.createElementNS(ns, 'defs');
+  defs.innerHTML = `
+    <linearGradient id="rock" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a232d"/>
+      <stop offset="50%" stop-color="#151d25"/>
+      <stop offset="100%" stop-color="#101820"/>
+    </linearGradient>`;
+  svg.appendChild(defs);
+
+  const band = document.createElementNS(ns, 'rect');
+  band.setAttribute('x', 0);
+  band.setAttribute('y', top);
+  band.setAttribute('width', W);
+  band.setAttribute('height', bandH);
+  band.setAttribute('fill', 'url(#rock)');
+  band.setAttribute('rx', 3);
+  svg.appendChild(band);
+
+  // 层理线
+  for (let i = 1; i < 4; i++) {
+    const ln = document.createElementNS(ns, 'line');
+    ln.setAttribute('x1', 0);
+    ln.setAttribute('x2', W);
+    ln.setAttribute('y1', top + (bandH / 4) * i);
+    ln.setAttribute('y2', top + (bandH / 4) * i);
+    ln.setAttribute('stroke', '#ffffff');
+    ln.setAttribute('stroke-opacity', '0.028');
+    svg.appendChild(ln);
+  }
+
+  // 左端标注
+  const cap = document.createElementNS(ns, 'text');
+  cap.setAttribute('x', 4);
+  cap.setAttribute('y', top - 8);
+  cap.setAttribute('class', 'ov-label');
+  cap.textContent = '共识基线 ▸ 所有阵营都不反对的前提';
+  svg.appendChild(cap);
+
+  const n = Math.max(issues.length, 1);
+
+  // 空结果也算一种结果：说明这几段话没有形成可辨识的对抗，而不是页面坏了
+  if (!issues.length) {
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', W / 2);
+    t.setAttribute('y', top + bandH / 2 + 6);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('class', 'ov-empty');
+    t.textContent = '这几段文字没有形成可辨识的争点';
+    svg.appendChild(t);
+    const sub = document.createElementNS(ns, 'text');
+    sub.setAttribute('x', W / 2);
+    sub.setAttribute('y', top + bandH + 30);
+    sub.setAttribute('text-anchor', 'middle');
+    sub.setAttribute('class', 'ov-empty-sub');
+    sub.textContent = '可能是它们立场一致、篇幅太短，或只是同一件事的不同说法。换几段互相不同意的试试。';
+    svg.appendChild(sub);
+  }
+
+  issues.forEach((issue, i) => {
+    const cx = (W / n) * (i + 0.5);
+    const color = FAULT_COLOR[issue.fault] || '#7f93a6';
+    const rnd = mulberry32(hashStr(issue.id + issue.title));
+
+    const g = document.createElementNS(ns, 'g');
+    g.setAttribute('class', 'ov-issue');
+    g.dataset.issueId = issue.id;
+
+    // 命中区
+    const hit = document.createElementNS(ns, 'rect');
+    const colW = W / n;
+    hit.setAttribute('x', cx - colW / 2 + 6);
+    hit.setAttribute('y', 18);
+    hit.setAttribute('width', colW - 12);
+    hit.setAttribute('height', 168);
+    hit.setAttribute('rx', 6);
+    hit.setAttribute('fill', 'transparent');
+    hit.setAttribute('class', 'ov-hit');
+    g.appendChild(hit);
+
+    // 裂缝：从岩层上方劈下来
+    let d = `M ${cx + (rnd() - 0.5) * 10} 52`;
+    const steps = 9;
+    for (let s = 1; s <= steps; s++) {
+      const y = 52 + (150 - 52) * (s / steps);
+      const x = cx + (rnd() - 0.5) * 26;
+      d += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
+    }
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width', '1.6');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('opacity', state.issueId === issue.id ? '1' : '0.55');
+    path.setAttribute('filter', 'drop-shadow(0 0 6px ' + color + '66)');
+    g.appendChild(path);
+
+    // 断层类型点
+    const dot = document.createElementNS(ns, 'circle');
+    dot.setAttribute('cx', cx);
+    dot.setAttribute('cy', top + bandH / 2);
+    dot.setAttribute('r', 4.5);
+    dot.setAttribute('fill', color);
+    dot.setAttribute('opacity', state.issueId === issue.id ? '1' : '0.7');
+    g.appendChild(dot);
+
+    // 标题
+    const label = document.createElementNS(ns, 'text');
+    label.setAttribute('x', cx);
+    label.setAttribute('y', 38);
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('font-size', '11.5');
+    label.setAttribute('fill', state.issueId === issue.id ? '#e3ebf3' : '#8b9dae');
+    label.textContent = clamp(issue.title, 16);
+    g.appendChild(label);
+
+    // 两侧标签
+    const a = document.createElementNS(ns, 'text');
+    a.setAttribute('x', cx - 14);
+    a.setAttribute('y', 168);
+    a.setAttribute('text-anchor', 'end');
+    a.setAttribute('font-size', '10');
+    a.setAttribute('fill', '#6f8296');
+    a.textContent = clamp(issue.sideA.label, 8);
+
+    const b = document.createElementNS(ns, 'text');
+    b.setAttribute('x', cx + 14);
+    b.setAttribute('y', 168);
+    b.setAttribute('font-size', '10');
+    b.setAttribute('fill', '#6f8296');
+    b.textContent = clamp(issue.sideB.label, 8);
+    g.appendChild(a);
+    g.appendChild(b);
+
+    g.addEventListener('click', () => selectIssue(issue.id));
+    svg.appendChild(g);
+  });
+}
+
+function clamp(s, n) {
+  const t = String(s || '');
+  return t.length > n ? t.slice(0, n - 1) + '…' : t;
+}
+
+function selectIssue(id) {
+  state.issueId = id;
+  state.belief = null;
+  renderOverview();
+  renderSplit();
+  renderInference();
+}
+
+/* --- 剖面 --- */
+function renderSplit() {
+  const ins = state.insight;
+  const issue = (ins.issues || []).find((i) => i.id === state.issueId);
+  if (!issue) {
+    $('splitTitle').textContent = '没有可展示的争点';
+    return;
+  }
+
+  const tag = $('faultTag');
+  tag.className = 'fault-tag ' + (FAULT_CLASS[issue.fault] || '');
+  tag.textContent = FAULT_LABEL[issue.fault] || issue.fault;
+  $('splitTitle').textContent = issue.title;
+
+  const myPremises = state.belief ? premisesOf(ins, issue, state.belief.side) : [];
+
+  renderSide('A', issue, myPremises);
+  renderSide('B', issue, myPremises);
+  renderCrack(issue);
+
+  $('faultReason').textContent = issue.faultReason || '—';
+  $('resolveBy').textContent = issue.resolveBy || '—';
+
+  $('stanceA').textContent = '站 ' + clamp(issue.sideA.label, 12);
+  $('stanceB').textContent = '站 ' + clamp(issue.sideB.label, 12);
+  $('stanceA').classList.toggle('active', state.belief?.side === 'A');
+  $('stanceB').classList.toggle('active', state.belief?.side === 'B');
+}
+
+function renderSide(side, issue, myPremises) {
+  const ins = state.insight;
+  const data = side === 'A' ? issue.sideA : issue.sideB;
+  $('label' + side).textContent = '立场 ' + side + ' · ' + data.label;
+
+  const wrap = $('cards' + side);
+  wrap.innerHTML = '';
+
+  data.claimIds.forEach((cid) => {
+    const claim = ins.claims.find((c) => c.id === cid);
+    if (!claim) return;
+    const answer = ins.answers.find((a) => a.id === claim.answerId);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const typeCls = claim.type === 'prediction' ? 'prediction' : claim.type;
+    const tags = (claim.premiseTags || [])
+      .map((t) => {
+        const hit = myPremises.includes(t);
+        return `<span class="ptag${hit ? ' hit' : ''}">${esc(t)}</span>`;
+      })
+      .join('');
+
+    card.innerHTML = `
+      <div class="card-meta">
+        <span class="card-type ${typeCls}">${TYPE_LABEL[claim.type] || claim.type}</span>
+        <span>${esc(answer?.author || '未知')}</span>
+        <span>${answer?.votes ? answer.votes.toLocaleString() + ' 赞' : ''}</span>
+      </div>
+      <div class="card-text">${esc(claim.text)}</div>
+      ${claim.evidence ? `<div class="card-evidence">依据：${esc(claim.evidence)}</div>` : ''}
+      ${tags ? `<div class="card-premises">${tags}</div>` : ''}
+    `;
+    wrap.appendChild(card);
+  });
+
+  if (!wrap.children.length) {
+    wrap.innerHTML = '<div class="card"><div class="card-text" style="color:var(--text-3)">这一侧没有可展示的主张</div></div>';
+  }
+}
+
+function renderCrack(issue) {
+  const svg = $('crack');
+  const ns = 'http://www.w3.org/2000/svg';
+  svg.innerHTML = '';
+  const color = FAULT_COLOR[issue.fault] || '#7f93a6';
+  const rnd = mulberry32(hashStr(issue.id + 'crack'));
+
+  let d = 'M 60 6';
+  const steps = 14;
+  for (let s = 1; s <= steps; s++) {
+    const y = 6 + (440 * s) / steps;
+    const x = 60 + (rnd() - 0.5) * 30;
+    d += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
+  }
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', d);
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', color);
+  path.setAttribute('stroke-width', '1.4');
+  path.setAttribute('stroke-linejoin', 'round');
+  path.setAttribute('opacity', '0.75');
+  svg.appendChild(path);
+
+  // 裂缝两侧的错动箭头：暗示两侧原本是一体的
+  for (const y of [90, 230, 370]) {
+    [[-1, -6], [1, 6]].forEach(([dir, dx]) => {
+      const a = document.createElementNS(ns, 'path');
+      a.setAttribute('d', `M ${60 + dx} ${y} l ${dir * 6} -4 l 0 8 z`);
+      a.setAttribute('fill', color);
+      a.setAttribute('opacity', '0.35');
+      svg.appendChild(a);
+    });
+  }
+
+  $('crackNote').textContent = FAULT_LABEL[issue.fault] || '';
+
+  // 论证强度：底部两段横条
+  const strength = document.createElementNS(ns, 'g');
+  const mk = (x, w, val) => {
+    const bg = document.createElementNS(ns, 'rect');
+    bg.setAttribute('x', x); bg.setAttribute('y', 448);
+    bg.setAttribute('width', w); bg.setAttribute('height', 2);
+    bg.setAttribute('fill', '#2a3846');
+    strength.appendChild(bg);
+    const fg = document.createElementNS(ns, 'rect');
+    fg.setAttribute('x', x); fg.setAttribute('y', 448);
+    fg.setAttribute('width', Math.max(2, w * val)); fg.setAttribute('height', 2);
+    fg.setAttribute('fill', color); fg.setAttribute('opacity', '0.8');
+    strength.appendChild(fg);
+  };
+  mk(6, 46, issue.strengthA ?? 0.5);
+  mk(68, 46, issue.strengthB ?? 0.5);
+  svg.appendChild(strength);
+}
+
+/* --- 边缘区 --- */
+function renderEdges() {
+  const ins = state.insight;
+
+  const iso = $('isolatedList');
+  iso.innerHTML = '';
+  (ins.isolated || []).forEach((it) => {
+    const claim = ins.claims.find((c) => c.id === it.claimId);
+    const answer = claim ? ins.answers.find((a) => a.id === claim.answerId) : null;
+    const div = document.createElement('div');
+    div.className = 'edge-item';
+    div.innerHTML = `<strong>${esc(claim?.text || it.claimId)}</strong><br>${esc(it.note)}${
+      answer ? `<br><span style="color:var(--text-3);font-size:11px">— ${esc(answer.author)}，${answer.votes.toLocaleString()} 赞</span>` : ''
+    }`;
+    iso.appendChild(div);
+  });
+  if (!iso.children.length) iso.innerHTML = '<div class="edge-item">本问题下没有孤证主张。</div>';
+
+  const silent = $('silentList');
+  silent.innerHTML = '';
+  (ins.silentMajority || []).forEach((it) => {
+    const answer = ins.answers.find((a) => a.id === it.answerId);
+    const div = document.createElement('div');
+    div.className = 'edge-item';
+    div.innerHTML = `<strong>${esc(answer?.author || it.answerId)}（${answer ? answer.votes.toLocaleString() : 0} 赞）</strong><br>${esc(it.note)}`;
+    silent.appendChild(div);
+  });
+  if (!silent.children.length) silent.innerHTML = '<div class="edge-item">本问题下没有沉默的多数。</div>';
+}
+
+/* --- 信念推演 --- */
+function setStance(side) {
+  const issue = (state.insight.issues || []).find((i) => i.id === state.issueId);
+  if (!issue) return;
+  if (!side || state.belief?.side === side) {
+    state.belief = null;
+  } else {
+    state.belief = { issueId: issue.id, side };
+  }
+  renderSplit();
+  renderInference();
+}
+
+function renderInference() {
+  const box = $('inference');
+  if (!state.belief) {
+    box.classList.add('hidden');
+    return;
+  }
+  const issue = state.insight.issues.find((i) => i.id === state.belief.issueId);
+  const result = inferBelief(state.insight, issue.id, state.belief.side);
+  if (!result) {
+    box.classList.add('hidden');
+    return;
+  }
+  box.classList.remove('hidden');
+
+  $('infSub').textContent = `你在「${clamp(issue.title, 20)}」上选择了「${result.sideLabel}」`;
+  $('infHeadline').textContent = result.headline;
+
+  const proj = $('infProjections');
+  proj.innerHTML = '';
+  if (!result.projections.length) {
+    proj.innerHTML = '<div class="proj-item"><div class="proj-issue">没有牵连到其他争点</div></div>';
+  }
+  result.projections.forEach((p) => {
+    const div = document.createElement('div');
+    div.className = 'proj-item';
+    div.innerHTML = `
+      <div class="proj-issue">${esc(p.issueTitle)}</div>
+      <div class="proj-lean">→ 你逻辑上应该站 <strong>${esc(p.leanLabel)}</strong></div>
+      <div class="proj-why">共同前提：${p.shared.map(esc).join(' · ') || '—'}</div>
+    `;
+    div.addEventListener('click', () => selectIssue(p.issueId));
+    proj.appendChild(div);
+  });
+
+  const costs = $('infCosts');
+  costs.innerHTML = '';
+  if (!result.costs.length) {
+    costs.innerHTML = '<div class="cost-item"><div class="cost-text" style="color:var(--text-2)">没有发现与你立场直接冲突的论据。</div></div>';
+  }
+  result.costs.forEach((c) => {
+    const div = document.createElement('div');
+    div.className = 'cost-item';
+    div.innerHTML = `
+      <div class="cost-text">${esc(c.text)}</div>
+      <div class="cost-clash">与你的前提冲突：${c.clash.map(esc).join(' · ')}</div>
+    `;
+    costs.appendChild(div);
+  });
+}
+
+/* ---------------- 引擎 ---------------- */
+
+/* 离线时的状态文案：不要把一个 fetch failed 丢给评委看 */
+function offlineStatus(err) {
+  const detail = err ? `（${err}）` : '';
+  if (location.protocol === 'file:') {
+    return '离线单文件版：内置示例可直接浏览；导入分析走规则引擎（约 0.2 秒）';
+  }
+  return '静态演示版：内置示例可直接浏览；导入分析走规则引擎（约 0.2 秒）。想看真模型，请在本机运行 start.bat' + detail;
+}
+
+async function checkEngine() {
+  await detectDemo();
+  const cfg = activeConfig();
+  const r = await probe(cfg);
+  state.llmOk = r.ok;
+  const dot = $('engineDot');
+  dot.className = 'dot ' + (r.ok ? 'ok' : 'bad');
+  const isDemo = Boolean(demoCfg) && cfg.baseUrl === demoCfg.baseUrl;
+  $('engineStatus').textContent = r.ok
+    ? `${isDemo ? '演示服务器模型已就绪' : '本地模型已连接'} · ${cfg.model}`
+    : offlineStatus(r.error);
+
+  if (r.ok && r.models.length && !r.models.includes(cfg.model)) {
+    $('engineStatus').textContent += ` · 可用模型：${r.models.slice(0, 3).join(', ')}`;
+  }
+
+  // 没模型时别让人点下去才发现：先告诉他在哪儿，以及有条不用模型的路
+  const hint = $('llmHint');
+  if (hint) {
+    const box = $('useLLM');
+    if (r.ok) {
+      hint.textContent = '';
+      hint.className = 'mini';
+      if (box) box.disabled = false;
+    } else {
+      // 公网静态版：说清楚这是演示版，别让人以为坏了
+      hint.textContent =
+        demoCfg || location.protocol === 'file:'
+          ? '未检测到本机模型 —— 取消勾选即可用规则引擎（约 0.2 秒，粗一些）'
+          : '这是静态演示版：没有服务端模型，导入分析走规则引擎（约 0.2 秒）。想看真模型，在本机运行 start.bat 再打开 127.0.0.1:4188';
+      hint.className = 'mini warn';
+      if (box) box.disabled = false;
+    }
+  }
+}
+
+function openSettings() {
+  const cfg = loadConfig();
+  $('cfgBase').value = cfg.baseUrl;
+  $('cfgModel').value = cfg.model;
+  $('cfgKey').value = cfg.apiKey || '';
+  $('probeResult').textContent = '';
+  buildProviderSelect(cfg);
+  openModal('settingsModal');
+}
+
+/* 模型商下拉：选中就只改 baseUrl/模型，不动 Key —— 切厂商时旧 Key 不会被静默沿用 */
+function buildProviderSelect(cfg) {
+  const sel = $('cfgProvider');
+  if (!sel) return;
+  if (!sel.options.length) {
+    sel.innerHTML = PROVIDERS.map((p) => `<option value="${p.id}">${p.label}</option>`).join('');
+    sel.addEventListener('change', () => {
+      const p = getProvider(sel.value);
+      if (!p) return;
+      const next = applyProvider(
+        { baseUrl: $('cfgBase').value.trim(), model: $('cfgModel').value.trim(), apiKey: $('cfgKey').value },
+        p.id
+      );
+      $('cfgBase').value = next.baseUrl;
+      $('cfgModel').value = next.model;
+      const note = $('cfgNote');
+      if (note) {
+        note.textContent = p.needsKey
+          ? `${p.label} 需要 API Key。切换模型商不会沿用上一次的 Key，请重新填写。`
+          : `${p.label} 不需要 Key。`;
+      }
+    });
+  }
+  const cur = cfg.providerId || 'ollama';
+  sel.value = PROVIDERS.some((p) => p.id === cur) ? cur : 'custom';
+}
+
+async function doProbe() {
+  const cfg = {
+    baseUrl: $('cfgBase').value.trim() || 'http://127.0.0.1:11434/v1',
+    model: $('cfgModel').value.trim() || 'qwen3.5:4b',
+    apiKey: $('cfgKey').value.trim()
+  };
+  $('probeResult').textContent = '测试中…';
+  const r = await probe(cfg);
+  $('probeResult').textContent = r.ok
+    ? `连接正常 · 可用模型 ${r.models.length} 个${r.models.length ? '：' + r.models.slice(0, 4).join(', ') : ''}`
+    : `连接失败：${r.error}`;
+}
+
+async function doSaveCfg() {
+  saveConfig({
+    baseUrl: $('cfgBase').value.trim() || 'http://127.0.0.1:11434/v1',
+    model: $('cfgModel').value.trim() || 'qwen3.5:4b',
+    apiKey: $('cfgKey').value.trim()
+  });
+  closeModal($('settingsModal'));
+  await checkEngine();
+}
+
+/* ---------------- 导入 ---------------- */
+
+async function runImport() {
+  const text = $('importText').value.trim();
+  if (!text) {
+    alert('请先粘贴回答内容');
+    return;
+  }
+  // 用户经常把问题标题连同回答一起贴进来：短、以问号结尾的首行就当标题，
+  // 不参与回答切分——否则它会被当成一条立场不明的回答。
+  const explicitTitle = $('importTitle').value.trim();
+  const lines = text.split('\n');
+  const firstLine = (lines[0] || '').trim();
+  const looksLikeQuestion = !explicitTitle && firstLine.length <= 40 && /[？?]\s*$/.test(firstLine);
+  const body = looksLikeQuestion ? lines.slice(1).join('\n').trim() : text;
+  const answers = splitRawAnswers(body);
+  const useLLM = $('useLLM').checked;
+  closeModal($('importModal'));
+  showLoading(useLLM ? '模型正在拆解论点…' : '规则引擎处理中…');
+
+  const stages = [];
+  try {
+    const result = await analyze({
+      answers,
+      cfg: activeConfig(),
+      useLLM,
+      onStage: (s) => {
+        stages.push(s);
+        if (s.message) setLoadingText(s.message);
+        if (typeof s.progress === 'number') setLoadingProgress(s.progress);
+      }
+    });
+    state.insight = {
+      ...result,
+      title: explicitTitle || (looksLikeQuestion ? firstLine : '从刚才贴进来的那段讨论'),
+      // 引擎写清楚：公网静态版没有服务端模型，判委会看到规则引擎的结果，
+      // 不写明就会被当成「这产品分析得这么粗」。
+      source: '导入内容 · 本机处理（' + (result.engine === 'llm' ? '本地模型' : '规则引擎') + '）'
+    };
+    state.issueId = state.insight.issues?.[0]?.id || null;
+    state.belief = null;
+    hideLoading();
+    renderAll();
+    // 不用 alert：它会阻塞渲染线程，把刚算出来的画面挡在遮罩层后面，
+    // 演示和录屏时看起来就像卡死。空状态由 renderOverview 的 ov-empty 承担。
+    if (!state.insight.issues?.length) {
+      showNotice('这次没有形成可对抗的争点：回答太少，或者立场太接近。建议至少 3 条互相不同意的回答。', 'warn');
+    } else {
+      showNotice('分析完成：' + state.insight.claims.length + ' 条主张，' + state.insight.issues.length + ' 个争点。', 'ok');
+    }
+  } catch (err) {
+    hideLoading();
+    showNotice('分析失败：' + err.message, 'err');
+  }
+}
+
+/* ---------------- 轻提示（替代 alert） ---------------- */
+let noticeTimer = null;
+function showNotice(text, kind) {
+  let el = $('notice');
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'notice' + (kind ? ' ' + kind : '');
+  el.classList.remove('hidden');
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => el.classList.add('hidden'), 14000);
+}
+
+/* ---------------- 知乎开放平台：话题 → 问题 → 真实回答 ---------------- */
+
+/**
+ * file:// 打开时 localStorage 属于「不透明来源」，直接访问会抛
+ * `localStorage is not available for opaque origins`，把整个 init 打断。
+ * 所以所有本地存储都过这一层。
+ */
+function safeStore(op, key, val) {
+  try {
+    if (op === 'get') return localStorage.getItem(key);
+    if (op === 'set') { localStorage.setItem(key, val); return true; }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 浏览器不能直连 developer.zhihu.com（同源策略），统一走本机代理 /api/zhihu。
+ * Secret 放请求头，不进 URL。
+ */
+async function zhihuGet(path, params, secret) {
+  if (location.protocol === 'file:') {
+    throw new Error('单文件模式没有本机代理。请用 `node server.mjs 4188` 启动后再拉知乎数据。');
+  }
+  const qs = new URLSearchParams({ path });
+  Object.keys(params || {}).forEach((k) => qs.set(k, params[k]));
+  const res = await fetch('/api/zhihu?' + qs.toString(), {
+    headers: { 'X-Zhihu-Secret': 'Bearer ' + secret }
+  });
+  let data = null;
+  const raw = await res.text();
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    // 公网静态托管（GitHub Pages 等）没有代理路由，会返回 404/HTML
+    throw new Error(
+      '当前地址没有本机代理（公网静态托管就是这样）。知乎拉取需要 `node server.mjs 4188` 在本机运行；' +
+        '在公网演示版里，请直接粘贴回答，或用内置示例。'
+    );
+  }
+  if (typeof data.Code === 'number' && data.Code !== 0) {
+    throw new Error('知乎返回 ' + data.Code + '：' + (data.Message || '未知错误'));
+  }
+  if (!res.ok) throw new Error('代理返回 HTTP ' + res.status);
+  return (data && data.Data) || {};
+}
+
+function zhihuItems(d) {
+  if (!d) return [];
+  if (Array.isArray(d.Items)) return d.Items;
+  if (Array.isArray(d)) return d;
+  return [];
+}
+
+async function zhihuFindQuestions() {
+  const secret = $('zhihuSecret').value.trim();
+  const topic = $('zhihuTopic').value.trim();
+  const list = $('zhihuList');
+  const note = $('zhihuNote');
+
+  if (!secret) {
+    note.textContent = '先填 Access Secret（developer.zhihu.com 个人中心 → 获取）。';
+    return;
+  }
+  safeStore('set', 'qijian.zhihu.secret', secret);
+  list.innerHTML = '<p class="mini">正在向知乎请求…</p>';
+  note.textContent = '';
+
+  try {
+    const params = { Count: 5 };
+    if (topic) params.Query = topic;
+    const d = await zhihuGet('/api/v1/user/question_recommendations', params, secret);
+    const items = zhihuItems(d);
+    if (!items.length) {
+      list.innerHTML = '<p class="mini">没有返回问题。换个话题词试试。</p>';
+      return;
+    }
+    list.innerHTML = '';
+    items.forEach((it, i) => {
+      const b = document.createElement('button');
+      b.className = 'zhihu-q';
+      b.type = 'button';
+      b.textContent = it.Title || '(无标题)';
+      b.addEventListener('click', () => zhihuLoadAnswers(it, i + 1));
+      list.appendChild(b);
+    });
+    note.textContent = '共 ' + items.length + ' 个问题。点一个，把该问题下的真实回答拉进来。';
+  } catch (err) {
+    list.innerHTML = '<p class="mini">拉取失败。</p>';
+    note.textContent = err.message;
+  }
+}
+
+async function zhihuLoadAnswers(item, idx) {
+  const secret = $('zhihuSecret').value.trim();
+  const note = $('zhihuNote');
+  const list = $('zhihuList');
+  if (!item || !item.Url) {
+    note.textContent = '这个条目没有 URL，无法拉回答。';
+    return;
+  }
+  list.querySelectorAll('.zhihu-q').forEach((b) => (b.disabled = true));
+  note.textContent = '正在拉取回答摘要…';
+
+  try {
+    const d = await zhihuGet(
+      '/api/v1/content/question_answers',
+      { QuestionUrl: item.Url, Offset: 0, Limit: 20 },
+      secret
+    );
+    const items = zhihuItems(d);
+    const texts = items
+      .map((x) => (x.Summary || '').trim())
+      .filter((s) => s.length >= 8);
+
+    if (texts.length < 2) {
+      note.textContent =
+        '知乎只返回了 ' + texts.length + ' 条可用摘要。这个接口会过滤掉无摘要的回答，换一个问题试试。';
+      list.querySelectorAll('.zhihu-q').forEach((b) => (b.disabled = false));
+      return;
+    }
+
+    $('importTitle').value = item.Title || '';
+    $('importText').value = texts.join('\n\n');
+    $('importText').scrollIntoView({ block: 'center', behavior: 'smooth' });
+
+    const paging = d.Paging || {};
+    note.textContent =
+      '已拉取 ' + texts.length + ' 条真实回答摘要（第 ' + (idx || 1) + ' 个问题）' +
+      (paging.Totals ? '，该问题共约 ' + paging.Totals + ' 条回答' : '') +
+      '。点「生成断层图」开始分析。';
+    list.querySelectorAll('.zhihu-q').forEach((b) => (b.disabled = false));
+  } catch (err) {
+    note.textContent = '拉取回答失败：' + err.message;
+    list.querySelectorAll('.zhihu-q').forEach((b) => (b.disabled = false));
+  }
+}
+
+/* ---------------- 弹窗与加载 ---------------- */
+
+function openModal(id) {
+  $(id).classList.remove('hidden');
+}
+function closeModal(el) {
+  el.classList.add('hidden');
+}
+
+function showLoading(text) {
+  let ov = document.querySelector('.loading-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.className = 'loading-overlay';
+    ov.innerHTML = '<div class="loader-line"><i></i></div><div class="loading-text"></div><div class="loading-pct"></div>';
+    document.body.appendChild(ov);
+  }
+  ov.classList.remove('hidden');
+  ov.querySelector('.loading-text').textContent = text;
+  setLoadingProgress(0.04);
+}
+function setLoadingText(text) {
+  const el = document.querySelector('.loading-overlay .loading-text');
+  if (el) el.textContent = text;
+}
+/** 进度条：本机 4B 模型拆 5 条回答大约要 1-2 分钟，没有进度会让人以为卡死 */
+function setLoadingProgress(p) {
+  const ov = document.querySelector('.loading-overlay');
+  if (!ov) return;
+  ov.classList.add('determinate');
+  const bar = ov.querySelector('.loader-line i');
+  const pct = Math.max(4, Math.min(100, Math.round(p * 100)));
+  if (bar) bar.style.width = pct + '%';
+  const t = ov.querySelector('.loading-pct');
+  if (t) t.textContent = pct + '%';
+}
+function hideLoading() {
+  const ov = document.querySelector('.loading-overlay');
+  if (ov) ov.classList.add('hidden');
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
+
+/* 供调试用 */
+window.__qijian = { state, ruleAnalyze, renderAll, selectIssue };
+
+init();
+return {  };
+})();
+
+})();
+</script>
+</body>
+</html>
